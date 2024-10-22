@@ -13,6 +13,19 @@ def stream_video(cam_id, save_state):
         print("Error: Could not open webcam.")
         exit()
 
+    # Initialise storage of video recording
+    if save_state:
+        # Setup the save path and initialize the video writer
+        save_dir = "Recordings"
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)
+
+        timestr = time.strftime("%Y%m%d_%H-%M-%S_")
+        file_name = 'webcam_stream.mp4'
+        save_path = os.path.join(save_dir, str(timestr + file_name))
+        # Initialise videoWriterObject to store video
+        video_writer = video_writer_object(source, save_path)
+
     while True:
         # Capture frame-by-frame from the webcam
         has_frame, frame = source.read()
@@ -28,15 +41,6 @@ def stream_video(cam_id, save_state):
         cv.imshow(win_name, frame)
 
         if save_state:
-            save_dir = "Recordings"
-            if not os.path.exists(save_dir):
-                os.mkdir(save_dir)
-
-            timestr = time.strftime("%Y%m%d-%H:%M:%S_")
-            file_name = 'webcam_stream.mp4'
-            save_path = os.path.join(save_dir, "/", timestr, file_name)
-            # Initialise videoWriter to store video
-            video_writer = video_writer_object(source, save_path)
             # Write the frame to the output files
             video_writer.write(frame)
 
@@ -45,8 +49,9 @@ def stream_video(cam_id, save_state):
             break
 
     # Release the video source and close any OpenCV windows
+    if save_state and video_writer:
+        video_writer.release()
     source.release()
-    video_writer.release()
     cv.destroyAllWindows()
 
 
@@ -100,33 +105,8 @@ def video_writer_object(source, video_name):
         return out_avi
     else:
         # Define the codec and create VideoWriter object.
-        out_mp4 = cv.VideoWriter(video_name, cv.VideoWriter_fourcc(*"XVID"), 10, (frame_width, frame_height))
+        out_mp4 = cv.VideoWriter(video_name, cv.VideoWriter_fourcc(*"mp4v"), 10, (frame_width, frame_height))
         return out_mp4
-
-
-def save_video(cam_id):
-    cap = cv.VideoCapture(cam_id)
-
-    if not cap.isOpened():
-        print("Error opening video stream or file")
-
-    # Read until video is completed
-    while cap.isOpened():
-        # Capture frame-by-frame
-        has_frame, frame = cap.read()
-
-        if has_frame:
-            # Write the frame to the output files
-            video_writer = video_writer_object(cap, 'webcam_stream.mp4')
-            video_writer.write(frame)
-
-        # Break the loop
-        else:
-            break
-
-    # When everything done, release the VideoCapture and VideoWriter objects
-    cap.release()
-    video_writer.release()
 
 
 if __name__ == "__main__":
