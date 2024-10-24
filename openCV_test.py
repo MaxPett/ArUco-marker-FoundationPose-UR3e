@@ -1,58 +1,65 @@
 import cv2 as cv
+import glob
 import time
 import tkinter as tk
 import os
+import numpy as np
 
 
-def stream_video(cam_id, save_state):
-    source = cv.VideoCapture(cam_id)
-    win_name = 'Webcam Feed'
+# Global variable to track image count and display time for the last captured image
+IMAGE_COUNTER = 1
+LAST_CAPTURE_TIME = 0
+DISPLAY_DURATION = 1000  # Display the image number for 1000ms (1 second)
 
-    # Check if the webcam is opened correctly
-    if not source.isOpened():
-        print("Error: Could not open webcam.")
-        exit()
 
-    # Initialise storage of video recording
-    if save_state:
-        # Setup the save path and initialize the video writer
-        save_dir = "Recordings"
-        if not os.path.exists(save_dir):
-            os.mkdir(save_dir)
+def cam_calibrate(showPics=True):
+    # @ Kevin Wood
+    # Read Image
+    root = os.getcwd()
+    calibration_dir = os.path.join(root, "calibration")
+    list_img_paths = glob.glob(os.path.join(calibration_dir, "*.jpg"))
 
-        timestr = time.strftime("%Y%m%d_%H-%M-%S_")
-        file_name = 'webcam_stream.mp4'
-        save_path = os.path.join(save_dir, str(timestr + file_name))
-        # Initialise videoWriterObject to store video
-        video_writer = video_writer_object(source, save_path)
+    # Initialize
+    n_rows = 9
+    m_cols = 6
+    term_crit = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+    world_points_cur = np.zeros((n_rows*m_cols, 3), np.float32)
+    world_points_cur[:, :2] = np.mgrid[0:n_rows, 0:m_cols].T.reshape(-1, 2)
+    list_world_points = []
+    list_img_points = []
 
-    while True:
-        # Capture frame-by-frame from the webcam
-        has_frame, frame = source.read()
-        # If frame was not captured correctly, exit the loop
-        if not has_frame:
-            print("Error: Failed to capture image.")
-            break
+    # Find Corners
+    for cur_img_path in list_img_paths:
+        img_BGR = cv.imread(cur_img_path)
+        img_gray = cv.cvtColor(img_BGR, cv.COLOR_BGR2GRAY)
+        cor_found, cor_org = cv.findChessboardCorners(img_gray, (n_rows, m_cols), None)
 
-        # flip source
-        frame = cv.flip(frame, 1)
-
-        # Display the resulting frame
-        cv.imshow(win_name, frame)
-
-        if save_state:
-            # Write the frame to the output files
-            video_writer.write(frame)
-
-        # Exit the loop if any key is pressed or the close button is pressed
-        if cv.waitKey(1) != -1 or cv.getWindowProperty(win_name, cv.WND_PROP_VISIBLE) < 1:
-            break
-
-    # Release the video source and close any OpenCV windows
-    if save_state and video_writer:
-        video_writer.release()
-    source.release()
+        if cor_found:
+            list_world_points.append(world_points_cur)
+            cor_refined = cv.cornerSubPix(img_gray, cor_org, (11, 11), (-1, -1), term_crit)
+            list_img_points.append(cor_refined)
+            if showPics:
+                cv.drawChessboardCorners(img_BGR, (n_rows, m_cols), cor_refined, cor_found)
+                cv.imshow('Chessboard', img_BGR)
+                cv.waitKey(500)
     cv.destroyAllWindows()
+
+    # Calibrate
+    rep_err, cam_matrix, dist_coeff, r_vec, t_vec = cv.calibrateCamera(list_world_points, list_img_points,
+                                                                       img_gray.shape[::-1], None, None)
+    print('Camera Matrix:\n', cam_matrix)
+    print("Reproj Error (pixles): {:.4f}".format(rep_err))
+
+    curr_folder = os.path.dirname(os.path.abspath(__file__))
+    param_path = os.path.join(curr_folder, 'calibration.npz')
+    np.savez(param_path,
+             rep_err=rep_err,
+             cam_matrix=cam_matrix,
+             dist_coeff=dist_coeff,
+             r_vec=r_vec,
+             t_vec=t_vec)
+
+    return cam_matrix, dist_coeff
 
 
 def video_save_request():
@@ -109,8 +116,96 @@ def video_writer_object(source, video_name):
         return out_mp4
 
 
+def stream_video(cam_id, save_state):
+    source = cv.VideoCapture(cam_id)
+    win_name = 'Webcam Feed'
+
+    # Check if the webcam is opened correctly
+    if not source.isOpened():
+        print("Error: Could not open webcam.")
+        exit()
+
+    # Setup the save directory for captured images
+    save_dir_calib = "calibration"
+    if not os.path.exists(save_dir_calib):
+        os.mkdir(save_dir_calib)
+    else:
+        list_pics = glob.glob(os.path.join(save_dir_calib, '*.png'))
+        for pic in list_pics:
+            os.remove(pic)
+
+    # Initialise storage of video recording
+    if save_state:
+        # Setup the save path and initialize the video writer
+        save_dir = "Recordings"
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)
+
+        timestr = time.strftime("%Y%m%d_%H-%M-%S_")
+        file_name = 'webcam_stream.mp4'
+        save_path = os.path.join(save_dir, str(timestr + file_name))
+        # Initialise videoWriterObject to store video
+        video_writer = video_writer_object(source, save_path)
+
+    while True:
+        # Capture frame-by-frame from the webcam
+        has_frame, frame = source.read()
+        # If frame was not captured correctly, exit the loop
+        if not has_frame:
+            print("Error: Failed to capture image.")
+            break
+
+        # flip source
+        frame = cv.flip(frame, 1)     # flip video
+        frame_width = source.get(3)   # float `width`
+        frame_height = source.get(4)  # float `height`
+
+        if save_state:
+            # Write the frame to the output files
+            video_writer.write(frame)
+
+        global IMAGE_COUNTER
+        global LAST_CAPTURE_TIME
+        global DISPLAY_DURATION
+
+        # Check if we need to display the captured image number
+        current_time = int(time.time() * 1000)  # Get current time in milliseconds
+
+        if current_time - LAST_CAPTURE_TIME <= DISPLAY_DURATION and IMAGE_COUNTER > 1 and not LAST_CAPTURE_TIME == 0:
+            # Display the last captured image number for 1000ms
+            text = f"Captured calibration picture {IMAGE_COUNTER - 1}"
+            (text_width, text_height), text_baseline = cv.getTextSize(text, cv.FONT_HERSHEY_SIMPLEX, 1.0, 2)
+            cv.putText(frame, text, (int(0.5*(frame_width-text_width)), int(0.95*frame_height-0.5*text_height)),
+                       cv.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2, cv.LINE_AA)
+
+        # Display the resulting frame
+        cv.imshow(win_name, frame)
+
+        # Capture the key pressed
+        key = cv.waitKey(1) & 0xFF
+        # If spacebar is pressed, capture and save the image
+        if key == 32:  # ASCII for space bar is 32
+            img_name = f"calibration_{IMAGE_COUNTER}.png"
+            img_path = os.path.join(save_dir_calib, img_name)
+            cv.imwrite(img_path, frame)
+            print(f"Image saved as {img_path}")
+            IMAGE_COUNTER += 1
+            LAST_CAPTURE_TIME = int(time.time() * 1000)  # Reset capture time
+
+        # Exit the loop if any key is pressed or the close button is pressed
+        if key == -1 and key != 27 or cv.getWindowProperty(win_name, cv.WND_PROP_VISIBLE) < 1:
+            break
+
+    # Release the video source and close any OpenCV windows
+    if save_state and video_writer:
+        video_writer.release()
+    source.release()
+    cv.destroyAllWindows()
+
+
 if __name__ == "__main__":
     cam_nr = 0
+    # cam_calibrate()
     save_video_state = video_save_request()
     stream_video(cam_nr, save_video_state)
 
