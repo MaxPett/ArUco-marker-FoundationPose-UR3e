@@ -4,12 +4,13 @@ import time
 import tkinter as tk
 import os
 import numpy as np
+from generate_aruco_tags import generate_aruco_tag
 
 
 # Global variable to track image count and display time for the last captured image
 IMAGE_COUNTER = 1
 LAST_CAPTURE_TIME = 0
-DISPLAY_DURATION = 1000  # Display the image number for 1000ms (1 second)
+DISPLAY_DURATION = 500  # Display the image number for 1000ms (1 second)
 
 
 def cam_calibrate(showPics=True):
@@ -17,10 +18,15 @@ def cam_calibrate(showPics=True):
     # Read Image
     root = os.getcwd()
     calibration_dir = os.path.join(root, "calibration")
-    list_img_paths = glob.glob(os.path.join(calibration_dir, "*.jpg"))
+    list_img_paths = glob.glob(os.path.join(calibration_dir, "*.png"))
+
+    # Start capturing calibration pictures
+    if len(list_img_paths) == 0:
+        stream_video(0, False)
+        list_img_paths = glob.glob(os.path.join(calibration_dir, "*.png"))
 
     # Initialize
-    n_rows = 9
+    n_rows = 8
     m_cols = 6
     term_crit = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     world_points_cur = np.zeros((n_rows*m_cols, 3), np.float32)
@@ -41,7 +47,7 @@ def cam_calibrate(showPics=True):
             if showPics:
                 cv.drawChessboardCorners(img_BGR, (n_rows, m_cols), cor_refined, cor_found)
                 cv.imshow('Chessboard', img_BGR)
-                cv.waitKey(500)
+                cv.waitKey(1000)
     cv.destroyAllWindows()
 
     # Calibrate
@@ -129,10 +135,20 @@ def stream_video(cam_id, save_state):
     save_dir_calib = "calibration"
     if not os.path.exists(save_dir_calib):
         os.mkdir(save_dir_calib)
-    else:
-        list_pics = glob.glob(os.path.join(save_dir_calib, '*.png'))
-        for pic in list_pics:
-            os.remove(pic)
+
+    calib_file_path = "calibration.npz"
+    if os.path.exists(calib_file_path):
+        # Load the camera calibration file
+        with np.load(calib_file_path) as data:
+            # Access each parameter
+            rep_err = data['rep_err']
+            cam_matrix = data['cam_matrix']
+            dist_coeff = data['dist_coeff']
+            r_vec = data['r_vec']
+            t_vec = data['t_vec']
+        cam_width, cam_height = int(source.get(3)), int(source.get(4))
+        new_cam_matrix, roi = cv.getOptimalNewCameraMatrix(cam_matrix, dist_coeff, (cam_width, cam_height), 1,
+                                                      (cam_width, cam_height))
 
     # Initialise storage of video recording
     if save_state:
@@ -159,6 +175,10 @@ def stream_video(cam_id, save_state):
         frame = cv.flip(frame, 1)     # flip video
         frame_width = source.get(3)   # float `width`
         frame_height = source.get(4)  # float `height`
+
+        # remove camera distortion if camera calibrated
+        if new_cam_matrix.any():
+            frame = cv.undistort(frame, cam_matrix, dist_coeff, None, new_cam_matrix)
 
         if save_state:
             # Write the frame to the output files
@@ -193,7 +213,7 @@ def stream_video(cam_id, save_state):
             LAST_CAPTURE_TIME = int(time.time() * 1000)  # Reset capture time
 
         # Exit the loop if any key is pressed or the close button is pressed
-        if key == -1 and key != 27 or cv.getWindowProperty(win_name, cv.WND_PROP_VISIBLE) < 1:
+        if key == 113 or key == 27 or cv.getWindowProperty(win_name, cv.WND_PROP_VISIBLE) < 1:
             break
 
     # Release the video source and close any OpenCV windows
@@ -205,9 +225,11 @@ def stream_video(cam_id, save_state):
 
 if __name__ == "__main__":
     cam_nr = 0
-    # cam_calibrate()
+    generate_aruco_tag(output_path="tags", tag_id=24, tag_type="DICT_5X5_100", tag_size=200)
+    cam_calibrate()
     save_video_state = video_save_request()
     stream_video(cam_nr, save_video_state)
+
 
 
 
