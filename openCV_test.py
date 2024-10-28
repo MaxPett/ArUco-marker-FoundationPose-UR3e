@@ -10,34 +10,53 @@ from pose_estimation import pose_estimation
 from utils import ARUCO_DICT
 
 
-# Global variable to track image count and display time for the last captured image
-IMAGE_COUNTER = 1
-LAST_CAPTURE_TIME = 0
-DISPLAY_DURATION = 500  # Display the image number for 500ms (0.5 second)
+"""
+Main script for camera calibration and ArUco marker pose estimation.
+This program provides functionality for:
+1. Camera calibration using a chessboard pattern
+2. Video capture and recording
+3. ArUco marker generation
+4. Real-time pose estimation using ArUco markers
+"""
+
+# Global variables for managing calibration image capture
+IMAGE_COUNTER = 1  # Tracks the number of calibration images taken
+LAST_CAPTURE_TIME = 0  # Timestamp of last image capture
+DISPLAY_DURATION = 500  # Duration (ms) to display capture confirmation
 
 
 def cam_calibrate(showPics=True):
-    # @ Kevin Wood
-    # Read Image
+    """
+        Performs camera calibration using chessboard pattern images and is based on the code of @ Kevin Wood
+
+        Args:
+            showPics (bool): If True, displays detected chessboard corners during calibration
+
+        Returns:
+            tuple: Camera matrix and distortion coefficients
+        """
+    # Read calibration images or capture new ones if none exist
     root = os.getcwd()
     calibration_dir = os.path.join(root, "calibration")
     list_img_paths = glob.glob(os.path.join(calibration_dir, "*.png"))
 
     # Start capturing calibration pictures
     if len(list_img_paths) == 0:
-        stream_video(0, False)
+        stream_video(0, False)  # Capture calibration images if none exist
         list_img_paths = glob.glob(os.path.join(calibration_dir, "*.png"))
 
-    # Initialize
+    # Define chessboard parameters
     n_rows = 8
     m_cols = 6
     term_crit = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+    # Initialize arrays for world and image points
     world_points_cur = np.zeros((n_rows*m_cols, 3), np.float32)
     world_points_cur[:, :2] = np.mgrid[0:n_rows, 0:m_cols].T.reshape(-1, 2)
     list_world_points = []
     list_img_points = []
 
-    # Find Corners
+    # Process each calibration image
     for cur_img_path in list_img_paths:
         img_BGR = cv.imread(cur_img_path)
         img_gray = cv.cvtColor(img_BGR, cv.COLOR_BGR2GRAY)
@@ -45,20 +64,22 @@ def cam_calibrate(showPics=True):
 
         if cor_found:
             list_world_points.append(world_points_cur)
+            # Refine corner detection for better accuracy
             cor_refined = cv.cornerSubPix(img_gray, cor_org, (11, 11), (-1, -1), term_crit)
             list_img_points.append(cor_refined)
-            if showPics:
+            if showPics:  # Display detected corners if requested
                 cv.drawChessboardCorners(img_BGR, (n_rows, m_cols), cor_refined, cor_found)
                 cv.imshow('Chessboard', img_BGR)
                 cv.waitKey(1000)
     cv.destroyAllWindows()
 
-    # Calibrate
+    # Perform camera calibration
     rep_err, cam_matrix, dist_coeff, r_vec, t_vec = cv.calibrateCamera(list_world_points, list_img_points,
                                                                        img_gray.shape[::-1], None, None)
     print('Camera Matrix:\n', cam_matrix)
     print("Reproj Error (pixles): {:.4f}".format(rep_err))
 
+    # Save calibration parameters
     curr_folder = os.path.dirname(os.path.abspath(__file__))
     param_path = os.path.join(curr_folder, 'calibration.npz')
     np.savez(param_path,
@@ -72,6 +93,12 @@ def cam_calibrate(showPics=True):
 
 
 def user_requests():
+    """
+        Creates a GUI window for user input on video settings.
+
+        Returns:
+            tuple: (save_video, run_pose_estimation, aruco_type, video_size)
+        """
     # Create a new window
     new_window = tk.Tk()
     new_window.title("Video Settings")
@@ -79,18 +106,17 @@ def user_requests():
     # Set the size of the window
     new_window.geometry("500x500+650+250")
 
-    # Create variables to hold the results
+    # GUI control variables
     save_result = tk.BooleanVar()
     pose_result = tk.BooleanVar()
     aruco_type = tk.StringVar()
-    video_size = tk.StringVar(value="200")  # New variable for video size with default value
-
-    # Variables for checkboxes
+    video_size = tk.StringVar(value="200")
     save_yes_var = tk.BooleanVar()
     save_no_var = tk.BooleanVar()
     pose_yes_var = tk.BooleanVar()
     pose_no_var = tk.BooleanVar()
 
+    # Input validation for ArUco marker size
     def validate_size(value):
         if value == "": return True  # Allow empty field for typing
         try:
@@ -101,6 +127,7 @@ def user_requests():
 
     validate_cmd = new_window.register(validate_size)
 
+    # Checkbox handlers to ensure mutual exclusivity
     def on_save_yes():
         if save_yes_var.get():
             save_no_var.set(False)
@@ -117,9 +144,9 @@ def user_requests():
         if pose_no_var.get():
             pose_yes_var.set(False)
 
-    # Function to handle 'Submit' button click
+    # Form submission handler
     def on_submit():
-        # Check if one option is selected for each question
+        # Validate all inputs before proceeding
         if not (save_yes_var.get() or save_no_var.get()):
             messagebox.showerror("Error", "Please select Yes or No for saving video")
             return
@@ -139,7 +166,7 @@ def user_requests():
         pose_result.set(pose_yes_var.get())  # True if Yes is checked, False if No is checked
         new_window.destroy()
 
-    # Create main frame for better organization
+    # GUI Layout setup
     main_frame = ttk.Frame(new_window, padding="20")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -234,8 +261,17 @@ def video_save_request():
 
 
 def video_writer_object(source, video_name):
-    # Default resolutions of the frame are obtained, fourcc code and frame dimensions important!
-    # Convert the resolutions from float to integer.
+    """
+        Creates a video writer object for saving video streams.
+        Frame resolution, frame dimensions and fourcc code important!
+
+        Args:
+            source: Video capture source
+            video_name (str): Output video filename
+
+        Returns:
+            cv2.VideoWriter: Configured video writer object
+        """
     frame_width = int(source.get(3))
     frame_height = int(source.get(4))
     if ".avi" in video_name:
@@ -261,6 +297,13 @@ def load_calibration_from_file(file_path):
 
 
 def stream_video(cam_id, save_state):
+    """
+       Streams video from camera and handles calibration image capture.
+
+       Args:
+           cam_id (int): Camera device ID
+           save_state (bool): Whether to save the video stream
+       """
     source = cv.VideoCapture(cam_id)
     win_name = 'Webcam Feed'
 
@@ -269,11 +312,12 @@ def stream_video(cam_id, save_state):
         print("Error: Could not open webcam.")
         exit()
 
-    # Setup the save directory for captured images
+    # Setup directories and load calibration if available
     save_dir_calib = "calibration"
     if not os.path.exists(save_dir_calib):
         os.mkdir(save_dir_calib)
 
+    # Initialize camera calibration if available
     calib_file_path = "calibration.npz"
     if os.path.exists(calib_file_path):
         rep_err, cam_matrix, dist_coeff, r_vec, t_vec = load_calibration_from_file(calib_file_path)
@@ -281,9 +325,8 @@ def stream_video(cam_id, save_state):
         new_cam_matrix, roi = cv.getOptimalNewCameraMatrix(cam_matrix, dist_coeff, (cam_width, cam_height), 1,
                                                       (cam_width, cam_height))
 
-    # Initialise storage of video recording
+    # Setup video saving if enabled and initialize the video writer object
     if save_state:
-        # Setup the save path and initialize the video writer
         save_dir = "Recordings"
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
@@ -294,6 +337,7 @@ def stream_video(cam_id, save_state):
         # Initialise videoWriterObject to store video
         video_writer = video_writer_object(source, save_path)
 
+    # Main video loop
     while True:
         # Capture frame-by-frame from the webcam
         has_frame, frame = source.read()
@@ -308,7 +352,7 @@ def stream_video(cam_id, save_state):
         frame_height = source.get(4)  # float `height`
 
         # remove camera distortion if camera calibrated
-        if new_cam_matrix.any():
+        if 'new_cam_matrix' in locals():
             frame = cv.undistort(frame, cam_matrix, dist_coeff, None, new_cam_matrix)
             win_name = 'Camera Calibration'
 
@@ -324,7 +368,7 @@ def stream_video(cam_id, save_state):
         current_time = int(time.time() * 1000)  # Get current time in milliseconds
 
         if current_time - LAST_CAPTURE_TIME <= DISPLAY_DURATION and IMAGE_COUNTER > 1 and not LAST_CAPTURE_TIME == 0:
-            # Display the last captured image number for 1000ms
+            # Display the last captured image number for DISPLAY_DURATION time
             text = f"Captured calibration picture {IMAGE_COUNTER - 1}"
             (text_width, text_height), text_baseline = cv.getTextSize(text, cv.FONT_HERSHEY_SIMPLEX, 1.0, 2)
             cv.putText(frame, text, (int(0.5*(frame_width-text_width)), int(0.95*frame_height-0.5*text_height)),
@@ -346,7 +390,7 @@ def stream_video(cam_id, save_state):
         elif key == 113 or key == 27 or cv.getWindowProperty(win_name, cv.WND_PROP_VISIBLE) < 1:
             break
 
-    # Release the video source and close any OpenCV windows
+    # Cleanup
     if save_state and video_writer:
         video_writer.release()
     source.release()
@@ -404,20 +448,15 @@ def run_pose_estimation(tag, save_state):
 
 
 if __name__ == "__main__":
-    cam_nr = 0
-    cam_calibrate()
+    cam_nr = 0  # Use internal camera
+    cam_calibrate()  # Perform camera calibration
     save_video_state, pose_estimation_state, aruco_tag, aruco_size = user_requests()
+    # Generate ArUco tag with user-specified parameters
     generate_aruco_tag(output_path="tags", tag_id=list(ARUCO_DICT.keys()).index(aruco_tag)+1, tag_type=aruco_tag,
                        tag_size=aruco_size)
     if pose_estimation_state:
         run_pose_estimation(aruco_tag, save_video_state)
     else:
         stream_video(cam_nr, save_video_state)
-
-
-
-
-
-
 
 
