@@ -13,7 +13,7 @@ from utils import ARUCO_DICT
 # Global variable to track image count and display time for the last captured image
 IMAGE_COUNTER = 1
 LAST_CAPTURE_TIME = 0
-DISPLAY_DURATION = 500  # Display the image number for 1000ms (1 second)
+DISPLAY_DURATION = 500  # Display the image number for 500ms (0.5 second)
 
 
 def cam_calibrate(showPics=True):
@@ -363,6 +363,7 @@ def run_pose_estimation(tag, save_state):
 
     # Initialize video capture
     video = cv.VideoCapture(0)
+    win_name = 'Pose Estimation'
 
     # Initialise storage of video recording
     if save_state:
@@ -386,14 +387,16 @@ def run_pose_estimation(tag, save_state):
         output = pose_estimation(frame, aruco_dict_type, cam_matrix, dist_coeff)
 
         # Display result
-        cv.imshow('Pose Estimation', output)
+        cv.imshow(win_name, output)
 
         if save_state:
             # Write the frame to the output files
             video_writer.write(frame)
 
-        # Break loop with 'q' key
-        if cv.waitKey(1) & 0xFF == ord('q'):
+        # Capture the key pressed
+        key = cv.waitKey(1) & 0xFF
+        # ESC or 'q' key or window closed
+        if key in [27, 113] or cv.getWindowProperty(win_name, cv.WND_PROP_VISIBLE) < 1:
             break
 
     video.release()

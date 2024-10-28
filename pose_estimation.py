@@ -6,6 +6,9 @@ import argparse
 import time
 
 
+# Adapted form GSNCodes ArUCo-Markers-Pose-Estimation-Generation-Python
+# https://github.com/GSNCodes/ArUCo-Markers-Pose-Estimation-Generation-Python
+
 def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coefficients):
     '''
     frame - Frame from the video stream
