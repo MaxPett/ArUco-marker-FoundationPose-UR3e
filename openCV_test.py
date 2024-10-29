@@ -358,7 +358,7 @@ def stream_video(cam_id, save_state):
     cv.destroyAllWindows()
 
 
-def run_pose_estimation(tag, save_state):
+def run_pose_estimation(tag, save_state, tag_size):
     # Load your calibration data
     calib_file_path = "calibration.npz"
     rep_err, cam_matrix, dist_coeff, r_vec, t_vec = load_calibration_from_file(calib_file_path)
@@ -389,7 +389,7 @@ def run_pose_estimation(tag, save_state):
             break
 
         # Call pose estimation function
-        output = pose_estimation(frame, aruco_dict_type, cam_matrix, dist_coeff)
+        output = pose_estimation(frame, aruco_dict_type, cam_matrix, dist_coeff, tag_size)
 
         # Display result
         cv.imshow(win_name, output)
@@ -416,7 +416,7 @@ if __name__ == "__main__":
     generate_aruco_tag(output_path="tags", tag_id=list(ARUCO_DICT.keys()).index(aruco_tag)+1, tag_type=aruco_tag,
                        tag_size=aruco_size)
     if pose_estimation_state:
-        run_pose_estimation(aruco_tag, save_video_state)
+        run_pose_estimation(aruco_tag, save_video_state, aruco_size)
     else:
         stream_video(cam_nr, save_video_state)
 

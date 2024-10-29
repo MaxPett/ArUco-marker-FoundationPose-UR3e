@@ -1,14 +1,58 @@
-# main.py
 """Main entry point for the camera calibration application."""
 
 import cv2 as cv
 from tkinter import messagebox
+import os
+import numpy as np
 
 # Local imports
 from config import CameraConfig
 from camera import Camera
 from calibration import CameraCalibrator
 from gui import SettingsDialog, UserPreferences
+
+
+def generate_aruco_tag(output_path, tag_id, tag_type, tag_size):
+    """
+    Generates an ArUCo tag and saves it to the specified output path.
+
+    Parameters:
+    - output_path (str): Path to save the generated ArUCo tag image.
+    - tag_id (int): ID of the ArUCo tag to generate.
+    - tag_type (str): Type of ArUCo tag to generate.
+    - tag_size (int): Size of the ArUCo tag in pixels.
+    """
+
+    ARUCO_DICT = CameraConfig.ARUCO_DICT_TYPES
+    # Check if the dictionary type is supported
+    if ARUCO_DICT.get(tag_type, None) is None:
+        print(f"ArUCo tag type '{tag_type}' is not supported")
+        return
+
+    # Get the dictionary and generate the tag
+    arucoDict = cv.aruco.getPredefinedDictionary(ARUCO_DICT[tag_type])
+    print(f"Generating ArUCo tag of type '{tag_type}' with ID '{tag_id}'")
+
+    # Generate the ArUco tag
+    tag = np.zeros((tag_size, tag_size, 1), dtype="uint8")
+    arucoDict.generateImageMarker(tag_id, tag_size, tag, 1)
+
+    # Save the generated tag
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    tag_name = f"{output_path}/{tag_type}_id_{tag_id}.png"
+    cv.imwrite(tag_name, tag)
+    print(f"ArUCo tag saved to {tag_name}")
+
+    # Display the tag
+    cv.imshow("ArUCo Tag", tag)
+    while True:
+        key = cv.waitKey(1) & 0xFF
+        if key in [27, ord('q')]:  # ESC or 'q' key
+            break
+        if cv.getWindowProperty("ArUCo Tag", cv.WND_PROP_VISIBLE) < 1:
+            break
+    cv.destroyAllWindows()
 
 
 def run_video_stream(camera: Camera, settings: UserPreferences):
@@ -39,9 +83,9 @@ def run_pose_estimation(camera: Camera, settings: UserPreferences):
         raise RuntimeError("Camera must be calibrated before running pose estimation")
 
     camera_matrix, dist_coeffs = calibration_data
-
+    ARUCO_DICT = CameraConfig.ARUCO_DICT_TYPES
     # Initialize ArUco detector based on settings.aruco_type
-    aruco_dict = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_6X6_250)
+    aruco_dict = cv.aruco.getPredefinedDictionary(ARUCO_DICT[settings.aruco_type])
     parameters = cv.aruco.DetectorParameters()
     detector = cv.aruco.ArucoDetector(aruco_dict, parameters)
 
@@ -85,7 +129,7 @@ def main():
     try:
         # Set up camera and calibrator
         camera = Camera()
-        camera.start()  # Add explicit camera start
+        camera.start()
         calibrator = CameraCalibrator(CameraConfig())
 
         # Get user preferences
@@ -96,6 +140,13 @@ def main():
         # Perform calibration if needed
         if not CameraCalibrator.load_calibration():
             camera_matrix, dist_coeffs = calibrator.calibrate()
+
+        # Generate the ArUCo tag
+        aruco_tag_output_dir = CameraConfig.TAGS_DIR
+        aruco_tag_type = settings.aruco_type
+        aruco_tag_id = CameraConfig.ARUCO_DICT_TYPES[aruco_tag_type]
+        aruco_tag_size = settings.video_size
+        generate_aruco_tag(aruco_tag_output_dir, aruco_tag_id, aruco_tag_type, aruco_tag_size)
 
         # Run the appropriate mode based on user selection
         if settings.run_pose_estimation:
