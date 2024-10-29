@@ -19,8 +19,8 @@ This project enables camera calibration, video capture, ArUco marker generation,
 
 1. Clone the repository:
     ```bash
-    git clone <repository-url>
-    cd <repository-directory>
+    git clone https://github.com/MaxPett/BSc-MMB
+    cd BSc-MMB
     ```
 
 2. Install dependencies:
@@ -39,7 +39,8 @@ This project enables camera calibration, video capture, ArUco marker generation,
 ## Usage
 
 1. **Camera Calibration**:
-   - Run the script to begin calibration using a chessboard pattern. The calibration images are captured or loaded from `calibration/`.
+   - Run the script to begin calibration using a chessboard pattern. The calibration images are captured by pressing the space key when the calibration window is opend or loaded from `calibration/`.
+   - Window can be closed by pressing ESC or 'q' key or window closed
 
 2. **User Input for Settings**:
    - A GUI will prompt for settings:
@@ -51,8 +52,8 @@ This project enables camera calibration, video capture, ArUco marker generation,
    - The program generates an ArUco marker with user-specified size and type.
 
 4. **Real-Time Pose Estimation or Video Stream**:
-   - If pose estimation is enabled, the program detects the specified ArUco marker and performs real-time pose estimation.
-   - Otherwise, it streams the video without pose estimation.
+   - If pose estimation is enabled, the program detects the specified ArUco marker (multiple ones possible) and performs real-time pose estimation.
+   - Otherwise, it streams the video without pose estimation and shows the undestorted image
 
 ## Example
 
