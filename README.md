@@ -40,6 +40,10 @@ This project enables camera calibration, video capture, ArUco marker generation,
 
 1. **Camera Calibration**:
    - Run the script to begin calibration using a chessboard pattern. The calibration images are captured by pressing the space key when the calibration window is opend or loaded from `calibration/`.
+   - number of rows and columns of chessboard needs to reduced by one and inserted in the code
+      - Take images in different planes (rotation and translation of the chessboard pattern)
+	  - Take multiple images (at least 10 for good results)
+      - The entire chessboard should be inside the chessboard	  
    - Window can be closed by pressing ESC or 'q' key or window closed
 
 2. **User Input for Settings**:
@@ -54,6 +58,14 @@ This project enables camera calibration, video capture, ArUco marker generation,
 4. **Real-Time Pose Estimation or Video Stream**:
    - If pose estimation is enabled, the program detects the specified ArUco marker (multiple ones possible) and performs real-time pose estimation.
    - Otherwise, it streams the video without pose estimation and shows the undestorted image
+   
+## Functions Overview
+- **cam_calibrate**: Performs camera calibration using chessboard patterns. Displays detected chessboard corners for reviewing purpose.
+- **user_requests**: Launches a GUI for user input to configure video saving, pose estimation, ArUco type, and size.
+- **video_writer_object**: Creates a video writer object for saving video based on specified file type (.avi or .mp4).
+- **load_calibration_from_file**: Loads camera calibration parameters from a saved file.
+- **stream_video**: Streams video from a webcam, with options for calibration and saving.
+- **run_pose_estimation**: Streams video and performes real-time pose estimation (multiple ArUco objects possible)
 
 ## Example
 

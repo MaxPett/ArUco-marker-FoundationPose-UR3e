@@ -221,45 +221,6 @@ def user_requests():
     return save_result.get(), pose_result.get(), aruco_type.get(), int(video_size.get())
 
 
-def video_save_request():
-    # Create a new window
-    new_window = tk.Tk()
-    new_window.title("Save Video Request")
-
-    # Set the size of the window (decent size)
-    new_window.geometry("300x150+650+250")
-
-    # Create a variable to hold the result
-    result = tk.BooleanVar()
-
-    # Function to handle 'Yes' button click
-    def on_yes():
-        result.set(True)
-        new_window.destroy()  # Close the window
-
-    # Function to handle 'No' button click
-    def on_no():
-        result.set(False)
-        new_window.destroy()  # Close the window
-
-    # Create a label with a question
-    label = tk.Label(new_window, text="Do you want to save the following video?", font=("Arial", 12))
-    label.pack(pady=20)
-
-    # Create 'Yes' and 'No' buttons
-    yes_button = tk.Button(new_window, text="Yes", width=10, command=on_yes)
-    yes_button.pack(side="left", padx=20, pady=10)
-
-    no_button = tk.Button(new_window, text="No", width=10, command=on_no)
-    no_button.pack(side="right", padx=20, pady=10)
-
-    # Wait for the window to close before returning the result
-    new_window.mainloop()
-
-    # Return the result (True or False)
-    return result.get()
-
-
 def video_writer_object(source, video_name):
     """
         Creates a video writer object for saving video streams.
