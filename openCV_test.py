@@ -492,7 +492,8 @@ def marker_enhancement(aruco_dict_tag):
     # assign bytesList to enhanced DICT
     dict_enhanced.bytesList = bytes_list_enhanced
     # Generate the ArUco tag
-    tag_size = 200
+    # Todo: currently fixed sizing factor --> adjust so it is as in standard version
+    tag_size = side_pixels_enhanced * 10
     tag_id = 1
     tag = np.zeros((tag_size, tag_size, 1), dtype="uint8")
     dict_enhanced.generateImageMarker(tag_id, tag_size, tag, 1)
