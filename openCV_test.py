@@ -445,7 +445,8 @@ def marker_enhancement(aruco_dict_tag):
     total_ids = bytes_list.shape[0]
 
     # assign size and max corr bites to new DICT
-    dict_enhanced.markerSize = side_pixels + 4
+    side_pixels_enhanced = side_pixels + 6
+    dict_enhanced.markerSize = side_pixels_enhanced
     dict_enhanced.maxCorrectionBits = max_corr_bits
 
     # generate enhanced bits pattern for each of the markers available in the standard DICT and assign to enhanced DICT
@@ -459,19 +460,24 @@ def marker_enhancement(aruco_dict_tag):
         vertical_vector_ones = np.ones((side_pixels, 1), dtype=np.uint8)
         vertical_vector_zeros = np.zeros((side_pixels, 1), dtype=np.uint8)
         # horizontal enhancement
-        bits_horizontal_enhanced = np.hstack((vertical_vector_ones, vertical_vector_zeros,
+        bits_horizontal_enhanced = np.hstack((vertical_vector_zeros, vertical_vector_ones, vertical_vector_zeros,
                                               bits_matrix,
-                                              vertical_vector_zeros, vertical_vector_ones))
+                                              vertical_vector_zeros, vertical_vector_ones, vertical_vector_zeros))
 
-        horizontal_vector_zeros = np.zeros((1, (side_pixels + 4)), dtype=np.uint8)
+        horizontal_vector_zeros = np.zeros((1, side_pixels_enhanced), dtype=np.uint8)
         # switch first & last bit to 1
         np.put(horizontal_vector_zeros, [0, -1], 1)
+        # switch place of first item with second one and second last with last one
+        horizontal_vector_zeros_inter = np.zeros((1, side_pixels_enhanced), dtype=np.uint8)
+        # switch second & second last bit to 1
+        np.put(horizontal_vector_zeros_inter, [1, -2], 1)
+
         # bit flip
         horizontal_vector_ones = 1 - horizontal_vector_zeros
         # vertical enhancement
-        bits_enhanced = np.vstack([horizontal_vector_ones, horizontal_vector_zeros,
+        bits_enhanced = np.vstack([horizontal_vector_zeros, horizontal_vector_ones, horizontal_vector_zeros_inter,
                                    bits_horizontal_enhanced,
-                                   horizontal_vector_zeros, horizontal_vector_ones])
+                                   horizontal_vector_zeros_inter, horizontal_vector_ones, horizontal_vector_zeros])
 
         # transform Bits to Bytes --> Storage type of Markers
         new_marker_comp = cv.aruco.Dictionary_getByteListFromBits(bits_enhanced)
@@ -486,7 +492,7 @@ def marker_enhancement(aruco_dict_tag):
     # assign bytesList to enhanced DICT
     dict_enhanced.bytesList = bytes_list_enhanced
     # Generate the ArUco tag
-    tag_size = 220
+    tag_size = 200
     tag_id = 1
     tag = np.zeros((tag_size, tag_size, 1), dtype="uint8")
     dict_enhanced.generateImageMarker(tag_id, tag_size, tag, 1)
@@ -511,7 +517,7 @@ if __name__ == "__main__":
     save_video_state, pose_estimation_state, aruco_tag, aruco_size = user_requests()
     # Generate ArUco tag with user-specified parameters
     id_tag = list(ARUCO_DICT.keys()).index(aruco_tag)+1
-    # marker_enhancement(aruco_tag)
+    marker_enhancement(aruco_tag)
     generate_aruco_tag(output_path="tags", tag_id=id_tag, tag_type=aruco_tag,
                        tag_size=aruco_size)
     if pose_estimation_state:
