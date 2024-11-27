@@ -34,7 +34,7 @@ def generate_aruco_tag(output_path, tag_id, tag_type="DICT_ARUCO_ORIGINAL", tag_
     # Save the generated tag
     if not os.path.exists(output_path):
         os.mkdir(output_path)
-    tag_name = f'{output_path}/{tag_type}_id_{tag_id}.png'
+    tag_name = f'{output_path}/{tag_type}_id_{tag_id}.jpg'
     cv2.imwrite(tag_name, tag)
     print(f"ArUCo tag saved to {tag_name}")
 

@@ -10,6 +10,8 @@ from pose_estimation import pose_estimation
 from utils import ARUCO_DICT
 
 
+
+
 """
 Main script for camera calibration and ArUco marker pose estimation.
 This program provides functionality for:
@@ -38,12 +40,12 @@ def cam_calibrate(showPics=True):
     # Read calibration images or capture new ones if none exist
     root = os.getcwd()
     calibration_dir = os.path.join(root, "calibration")
-    list_img_paths = glob.glob(os.path.join(calibration_dir, "*.png"))
+    list_img_paths = glob.glob(os.path.join(calibration_dir, "*.jpg"))
 
     # Start capturing calibration pictures
     if len(list_img_paths) == 0:
         stream_video(0, False)  # Capture calibration images if none exist
-        list_img_paths = glob.glob(os.path.join(calibration_dir, "*.png"))
+        list_img_paths = glob.glob(os.path.join(calibration_dir, "*.jpg"))
 
     # Define chessboard parameters
     n_rows = 8
@@ -60,16 +62,16 @@ def cam_calibrate(showPics=True):
     for cur_img_path in list_img_paths:
         img_BGR = cv.imread(cur_img_path)
         img_gray = cv.cvtColor(img_BGR, cv.COLOR_BGR2GRAY)
-        cor_found, cor_org = cv.findChessboardCorners(img_gray, (n_rows, m_cols), None)
+        cor_found, cor_org = cv.findChessboardCorners(img_gray, (n_rows, m_cols), cv.CALIB_CB_ADAPTIVE_THRESH)
 
         if cor_found:
             list_world_points.append(world_points_cur)
             # Refine corner detection for better accuracy
-            cor_refined = cv.cornerSubPix(img_gray, cor_org, (11, 11), (-1, -1), term_crit)
+            cor_refined = cv.cornerSubPix(img_gray, cor_org, (5, 5), (-1, -1), term_crit)
             list_img_points.append(cor_refined)
             if showPics:  # Display detected corners if requested
                 cv.drawChessboardCorners(img_BGR, (n_rows, m_cols), cor_refined, cor_found)
-                cv.imshow('Chessboard', img_BGR)
+                cv.imshow('Webcam - Chessboard', img_BGR)
                 cv.waitKey(1000)
     cv.destroyAllWindows()
 
@@ -316,6 +318,11 @@ def stream_video(cam_id, save_state):
         if 'new_cam_matrix' in locals():
             frame = cv.undistort(frame, cam_matrix, dist_coeff, None, new_cam_matrix)
             win_name = 'Camera Calibration'
+            # Draw a green rectangle, illustrating the undistorted region
+            x, y, w, h = roi
+            color = (0, 255, 0)  # Green color in BGR format
+            thickness = 2  # Thickness of the rectangle border
+            cv.rectangle(frame, (x, y), (x + w, y + h), color, thickness)
 
         if save_state:
             # Write the frame to the output files
@@ -342,7 +349,7 @@ def stream_video(cam_id, save_state):
         key = cv.waitKey(1) & 0xFF
         # If spacebar is pressed, capture and save the image
         if key == 32:  # ASCII for space bar is 32
-            img_name = f"calibration_{IMAGE_COUNTER}.png"
+            img_name = f"calibration_{IMAGE_COUNTER}.jpg"
             img_path = os.path.join(save_dir_calib, img_name)
             cv.imwrite(img_path, frame)
             print(f"Image saved as {img_path}")
@@ -370,6 +377,14 @@ def run_pose_estimation(tag, save_state, tag_size):
     video = cv.VideoCapture(0)
     win_name = 'Pose Estimation'
 
+    # Initialize camera calibration if available
+    calib_file_path = "calibration.npz"
+    if os.path.exists(calib_file_path):
+        rep_err, cam_matrix, dist_coeff, r_vec, t_vec = load_calibration_from_file(calib_file_path)
+        cam_width, cam_height = int(video.get(3)), int(video.get(4))
+        new_cam_matrix, roi = cv.getOptimalNewCameraMatrix(cam_matrix, dist_coeff, (cam_width, cam_height), 1,
+                                                           (cam_width, cam_height))
+
     # Initialise storage of video recording
     if save_state:
         # Setup the save path and initialize the video writer
@@ -388,8 +403,16 @@ def run_pose_estimation(tag, save_state, tag_size):
         if not ret:
             break
 
+        # remove camera distortion if camera calibrated
+        if 'new_cam_matrix' in locals():
+            frame = cv.undistort(frame, cam_matrix, dist_coeff, None, new_cam_matrix)
+            # crop image to undistorted region
+            x, y, w, h = roi
+            frame = frame[y:y + h, x:x + w]
+            win_name = 'Undistorted Pose Estimation'
+
         # Call pose estimation function
-        output = pose_estimation(frame, aruco_dict_type, cam_matrix, dist_coeff, tag_size)
+        output = pose_estimation(frame, aruco_dict_type, new_cam_matrix, dist_coeff, tag_size)
 
         # Display result
         cv.imshow(win_name, output)
@@ -408,12 +431,88 @@ def run_pose_estimation(tag, save_state, tag_size):
     cv.destroyAllWindows()
 
 
+# Test enhancement of aruco marker --> ArUcoE
+def marker_enhancement(aruco_dict_tag):
+    # initialise new DICT markers
+    dict_enhanced = cv.aruco.Dictionary()
+
+    # select predefined ArUco marker dictionary
+    arucoDict = cv.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_dict_tag])
+    # get bytesList of all ids
+    bytes_list = arucoDict.bytesList
+    max_corr_bits = arucoDict.maxCorrectionBits
+    side_pixels = arucoDict.markerSize
+    total_ids = bytes_list.shape[0]
+
+    # assign size and max corr bites to new DICT
+    dict_enhanced.markerSize = side_pixels + 4
+    dict_enhanced.maxCorrectionBits = max_corr_bits
+
+    # generate enhanced bits pattern for each of the markers available in the standard DICT and assign to enhanced DICT
+    bytes_list_enhanced = np.empty((0,))
+    for aruco_id in range(total_ids):
+        # extract bits from selected ArUco tag
+        next_aruco_id = aruco_id + 1
+        bits_matrix = cv.aruco.Dictionary_getBitsFromByteList(bytes_list[aruco_id:next_aruco_id, :, :], side_pixels)
+
+        # matrix enhancement
+        vertical_vector_ones = np.ones((side_pixels, 1), dtype=np.uint8)
+        vertical_vector_zeros = np.zeros((side_pixels, 1), dtype=np.uint8)
+        # horizontal enhancement
+        bits_horizontal_enhanced = np.hstack((vertical_vector_ones, vertical_vector_zeros,
+                                              bits_matrix,
+                                              vertical_vector_zeros, vertical_vector_ones))
+
+        horizontal_vector_zeros = np.zeros((1, (side_pixels + 4)), dtype=np.uint8)
+        # switch first & last bit to 1
+        np.put(horizontal_vector_zeros, [0, -1], 1)
+        # bit flip
+        horizontal_vector_ones = 1 - horizontal_vector_zeros
+        # vertical enhancement
+        bits_enhanced = np.vstack([horizontal_vector_ones, horizontal_vector_zeros,
+                                   bits_horizontal_enhanced,
+                                   horizontal_vector_zeros, horizontal_vector_ones])
+
+        # transform Bits to Bytes --> Storage type of Markers
+        new_marker_comp = cv.aruco.Dictionary_getByteListFromBits(bits_enhanced)
+        # Add the marker as a new row
+        if bytes_list_enhanced.size == 0:
+            # If the array is empty, directly reshape to match the first element
+            bytes_list_enhanced = new_marker_comp
+        else:
+            # Otherwise, concatenate along the first axis
+            bytes_list_enhanced = np.concatenate((bytes_list_enhanced, new_marker_comp), axis=0)
+
+    # assign bytesList to enhanced DICT
+    dict_enhanced.bytesList = bytes_list_enhanced
+    # Generate the ArUco tag
+    tag_size = 220
+    tag_id = 1
+    tag = np.zeros((tag_size, tag_size, 1), dtype="uint8")
+    dict_enhanced.generateImageMarker(tag_id, tag_size, tag, 1)
+
+    # Optionally, display the tag
+    cv.imshow("ArUCoE Tag", tag)
+    # Wait for key press or window close
+    while True:
+        key = cv.waitKey(1) & 0xFF
+        if key in [27, 113]:  # ESC or 'q' key
+            break
+        if cv.getWindowProperty("ArUcoE Tag", cv.WND_PROP_VISIBLE) < 1:
+            break
+
+    cv.destroyAllWindows()
+    print("done")
+
+
 if __name__ == "__main__":
     cam_nr = 0  # Use internal camera
     cam_calibrate()  # Perform camera calibration
     save_video_state, pose_estimation_state, aruco_tag, aruco_size = user_requests()
     # Generate ArUco tag with user-specified parameters
-    generate_aruco_tag(output_path="tags", tag_id=list(ARUCO_DICT.keys()).index(aruco_tag)+1, tag_type=aruco_tag,
+    id_tag = list(ARUCO_DICT.keys()).index(aruco_tag)+1
+    # marker_enhancement(aruco_tag)
+    generate_aruco_tag(output_path="tags", tag_id=id_tag, tag_type=aruco_tag,
                        tag_size=aruco_size)
     if pose_estimation_state:
         run_pose_estimation(aruco_tag, save_video_state, aruco_size)
