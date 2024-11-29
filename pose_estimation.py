@@ -38,14 +38,13 @@ def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coef
             # Estimate pose of each marker
             rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corners[i:i+1], metric_tag_size, matrix_coefficients,
                                                                 distortion_coefficients)
-
             # Draw markers
             cv2.aruco.drawDetectedMarkers(frame, corners[i:i+1], ids[i:i+1])
 
             # Draw axis for each marker
 
             frame = cv2.drawFrameAxes(frame, matrix_coefficients, distortion_coefficients,
-                                      rvec, tvec, 0.01)
+                                      rvec, tvec, 0.5*metric_tag_size)
 
     return frame
 

@@ -431,94 +431,12 @@ def run_pose_estimation(tag, save_state, tag_size):
     cv.destroyAllWindows()
 
 
-# Test enhancement of aruco marker --> ArUcoE
-def marker_enhancement(aruco_dict_tag):
-    # initialise new DICT markers
-    dict_enhanced = cv.aruco.Dictionary()
-
-    # select predefined ArUco marker dictionary
-    arucoDict = cv.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_dict_tag])
-    # get bytesList of all ids
-    bytes_list = arucoDict.bytesList
-    max_corr_bits = arucoDict.maxCorrectionBits
-    side_pixels = arucoDict.markerSize
-    total_ids = bytes_list.shape[0]
-
-    # assign size and max corr bites to new DICT
-    side_pixels_enhanced = side_pixels + 6
-    dict_enhanced.markerSize = side_pixels_enhanced
-    dict_enhanced.maxCorrectionBits = max_corr_bits
-
-    # generate enhanced bits pattern for each of the markers available in the standard DICT and assign to enhanced DICT
-    bytes_list_enhanced = np.empty((0,))
-    for aruco_id in range(total_ids):
-        # extract bits from selected ArUco tag
-        next_aruco_id = aruco_id + 1
-        bits_matrix = cv.aruco.Dictionary_getBitsFromByteList(bytes_list[aruco_id:next_aruco_id, :, :], side_pixels)
-
-        # matrix enhancement
-        vertical_vector_ones = np.ones((side_pixels, 1), dtype=np.uint8)
-        vertical_vector_zeros = np.zeros((side_pixels, 1), dtype=np.uint8)
-        # horizontal enhancement
-        bits_horizontal_enhanced = np.hstack((vertical_vector_zeros, vertical_vector_ones, vertical_vector_zeros,
-                                              bits_matrix,
-                                              vertical_vector_zeros, vertical_vector_ones, vertical_vector_zeros))
-
-        horizontal_vector_zeros = np.zeros((1, side_pixels_enhanced), dtype=np.uint8)
-        # switch first & last bit to 1
-        np.put(horizontal_vector_zeros, [0, -1], 1)
-        # switch place of first item with second one and second last with last one
-        horizontal_vector_zeros_inter = np.zeros((1, side_pixels_enhanced), dtype=np.uint8)
-        # switch second & second last bit to 1
-        np.put(horizontal_vector_zeros_inter, [1, -2], 1)
-
-        # bit flip
-        horizontal_vector_ones = 1 - horizontal_vector_zeros
-        # vertical enhancement
-        bits_enhanced = np.vstack([horizontal_vector_zeros, horizontal_vector_ones, horizontal_vector_zeros_inter,
-                                   bits_horizontal_enhanced,
-                                   horizontal_vector_zeros_inter, horizontal_vector_ones, horizontal_vector_zeros])
-
-        # transform Bits to Bytes --> Storage type of Markers
-        new_marker_comp = cv.aruco.Dictionary_getByteListFromBits(bits_enhanced)
-        # Add the marker as a new row
-        if bytes_list_enhanced.size == 0:
-            # If the array is empty, directly reshape to match the first element
-            bytes_list_enhanced = new_marker_comp
-        else:
-            # Otherwise, concatenate along the first axis
-            bytes_list_enhanced = np.concatenate((bytes_list_enhanced, new_marker_comp), axis=0)
-
-    # assign bytesList to enhanced DICT
-    dict_enhanced.bytesList = bytes_list_enhanced
-    # Generate the ArUco tag
-    # Todo: currently fixed sizing factor --> adjust so it is as in standard version
-    tag_size = side_pixels_enhanced * 10
-    tag_id = 1
-    tag = np.zeros((tag_size, tag_size, 1), dtype="uint8")
-    dict_enhanced.generateImageMarker(tag_id, tag_size, tag, 1)
-
-    # Optionally, display the tag
-    cv.imshow("ArUCoE Tag", tag)
-    # Wait for key press or window close
-    while True:
-        key = cv.waitKey(1) & 0xFF
-        if key in [27, 113]:  # ESC or 'q' key
-            break
-        if cv.getWindowProperty("ArUcoE Tag", cv.WND_PROP_VISIBLE) < 1:
-            break
-
-    cv.destroyAllWindows()
-    print("done")
-
-
 if __name__ == "__main__":
     cam_nr = 0  # Use internal camera
     cam_calibrate()  # Perform camera calibration
     save_video_state, pose_estimation_state, aruco_tag, aruco_size = user_requests()
     # Generate ArUco tag with user-specified parameters
     id_tag = list(ARUCO_DICT.keys()).index(aruco_tag)+1
-    marker_enhancement(aruco_tag)
     generate_aruco_tag(output_path="tags", tag_id=id_tag, tag_type=aruco_tag,
                        tag_size=aruco_size)
     if pose_estimation_state:
