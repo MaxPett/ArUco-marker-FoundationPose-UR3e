@@ -235,7 +235,7 @@ def main():
     parser.add_argument("-c", "--columns", help="pattern columns", default="8", action="store", dest="columns",
                         type=int)
     parser.add_argument("-r", "--rows", help="pattern rows", default="11", action="store", dest="rows", type=int)
-    parser.add_argument("-T", "--type", help="type of pattern", default="circles", action="store", dest="p_type",
+    parser.add_argument("-T", "--type", help="type of pattern", default="checkerboard", action="store", dest="p_type",
                         choices=["circles", "acircles", "checkerboard", "radon_checkerboard", "charuco_board"])
     parser.add_argument("-u", "--units", help="length unit", default="mm", action="store", dest="units",
                         choices=["mm", "inches", "px", "m"])

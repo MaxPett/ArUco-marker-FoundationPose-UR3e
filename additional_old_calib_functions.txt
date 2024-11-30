@@ -1,0 +1,42 @@
+# Initialize camera calibration if available
+    calib_file_path = "calibration.npz"
+
+    if os.path.exists(calib_file_path):
+        rep_err, cam_matrix, dist_coeff, r_vec, t_vec = load_calibration_from_file(calib_file_path)
+        cam_width, cam_height = int(source.get(3)), int(source.get(4))
+        new_cam_matrix, roi = cv.getOptimalNewCameraMatrix(cam_matrix, dist_coeff, (cam_width, cam_height), 1,
+                                                      (cam_width, cam_height))
+
+
+ # Setup video saving if enabled and initialize the video writer object
+    if save_state:
+        save_dir = "Recordings"
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)
+
+        timestr = time.strftime("%Y%m%d_%H-%M-%S_")
+        file_name = 'webcam_stream.mp4'
+        save_path = os.path.join(save_dir, str(timestr + file_name))
+        # Initialise videoWriterObject to store video
+        video_writer = video_writer_object(source, save_path)
+
+
+# remove camera distortion if camera calibrated
+        if 'new_cam_matrix' in locals():
+            frame = cv.undistort(frame, cam_matrix, dist_coeff, None, new_cam_matrix)
+            win_name = 'Camera Calibration'
+            # Draw a green rectangle, illustrating the undistorted region
+            x, y, w, h = roi
+            color = (0, 255, 0)  # Green color in BGR format
+            thickness = 2  # Thickness of the rectangle border
+            cv.rectangle(frame, (x, y), (x + w, y + h), color, thickness)
+
+        if save_state:
+            # Write the frame to the output files
+            video_writer.write(frame)
+
+# Cleanup
+if save_state and video_writer:
+    video_writer.release()
+
+-c 7 -r 9 -t chessboard -p calibration -n 0 --square_size=50

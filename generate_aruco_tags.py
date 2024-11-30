@@ -2,7 +2,7 @@ import argparse
 import os
 import numpy as np
 import cv2
-from utils import ARUCO_DICT
+from calibrate import ARUCO_DICT
 
 
 # Adapted form GSNCodes ArUCo-Markers-Pose-Estimation-Generation-Python

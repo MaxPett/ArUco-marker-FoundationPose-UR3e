@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import sys
-from utils import ARUCO_DICT
+from calibrate import ARUCO_DICT
 import argparse
 import time
 
