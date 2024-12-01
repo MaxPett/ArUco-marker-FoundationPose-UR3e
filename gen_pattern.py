@@ -23,7 +23,7 @@ import argparse
 import numpy as np
 import json
 import gzip
-import svgwrite
+from svgfig import *
 
 
 class PatternMaker:
@@ -40,7 +40,7 @@ class PatternMaker:
         self.aruco_marker_size = aruco_marker_size #for charuco boards only
         self.dict_file = dict_file
 
-        self.dwg = svgwrite.Drawing(filename=self.output, size=(f"{self.width}{self.units}", f"{self.height}{self.units}"))
+        self.g = SVG("g")  # the svg group container
 
     def make_circles_pattern(self):
         spacing = self.square_size
@@ -49,38 +49,35 @@ class PatternMaker:
         pattern_height = ((self.rows - 1.0) * spacing) + (2.0 * r)
         x_spacing = (self.width - pattern_width) / 2.0
         y_spacing = (self.height - pattern_height) / 2.0
-
-        for x in range(self.cols):
-            for y in range(self.rows):
-                cx = (x * spacing) + x_spacing + r
-                cy = (y * spacing) + y_spacing + r
-                self.dwg.add(self.dwg.circle(center=(cx, cy), r=r, fill="black"))
+        for x in range(0, self.cols):
+            for y in range(0, self.rows):
+                dot = SVG("circle", cx=(x * spacing) + x_spacing + r,
+                          cy=(y * spacing) + y_spacing + r, r=r, fill="black", stroke="none")
+                self.g.append(dot)
 
     def make_acircles_pattern(self):
         spacing = self.square_size
         r = spacing / self.radius_rate
-        pattern_width = ((self.cols - 1.0) * 2 * spacing) + spacing + (2.0 * r)
-        pattern_height = ((self.rows - 1.0) * spacing) + (2.0 * r)
+        pattern_width = ((self.cols-1.0) * 2 * spacing) + spacing + (2.0 * r)
+        pattern_height = ((self.rows-1.0) * spacing) + (2.0 * r)
         x_spacing = (self.width - pattern_width) / 2.0
         y_spacing = (self.height - pattern_height) / 2.0
-
-        for x in range(self.cols):
-            for y in range(self.rows):
-                cx = (2 * x * spacing) + (y % 2) * spacing + x_spacing + r
-                cy = (y * spacing) + y_spacing + r
-                self.dwg.add(self.dwg.circle(center=(cx, cy), r=r, fill="black"))
+        for x in range(0, self.cols):
+            for y in range(0, self.rows):
+                dot = SVG("circle", cx=(2 * x * spacing) + (y % 2)*spacing + x_spacing + r,
+                          cy=(y * spacing) + y_spacing + r, r=r, fill="black", stroke="none")
+                self.g.append(dot)
 
     def make_checkerboard_pattern(self):
         spacing = self.square_size
-        x_spacing = (self.width - self.cols * self.square_size) / 2.0
-        y_spacing = (self.height - self.rows * self.square_size) / 2.0
-
-        for x in range(self.cols):
-            for y in range(self.rows):
-                if (x + y) % 2 == 0:  # Black squares
-                    x_pos = x * spacing + x_spacing
-                    y_pos = y * spacing + y_spacing
-                    self.dwg.add(self.dwg.rect(insert=(x_pos, y_pos), size=(spacing, spacing), fill="black"))
+        xspacing = (self.width - self.cols * self.square_size) / 2.0
+        yspacing = (self.height - self.rows * self.square_size) / 2.0
+        for x in range(0, self.cols):
+            for y in range(0, self.rows):
+                if x % 2 == y % 2:
+                    square = SVG("rect", x=x * spacing + xspacing, y=y * spacing + yspacing, width=spacing,
+                                 height=spacing, fill="black", stroke="none")
+                    self.g.append(square)
 
     @staticmethod
     def _make_round_rect(x, y, diam, corners=("right", "right", "right", "right")):
@@ -123,42 +120,36 @@ class PatternMaker:
 
     def make_radon_checkerboard_pattern(self):
         spacing = self.square_size
-        x_spacing = (self.width - self.cols * self.square_size) / 2.0
-        y_spacing = (self.height - self.rows * self.square_size) / 2.0
-
+        xspacing = (self.width - self.cols * self.square_size) / 2.0
+        yspacing = (self.height - self.rows * self.square_size) / 2.0
         for x in range(0, self.cols):
             for y in range(0, self.rows):
                 if x % 2 == y % 2:
                     corner_types, is_inside = self._get_type(x, y)
                     if is_inside:
-                        self.dwg.add(
-                            self.dwg.rect(
-                                insert=(x * spacing + x_spacing, y * spacing + y_spacing), size=(spacing, spacing),
-                                fill="black"))
+                        square = SVG("rect", x=x * spacing + xspacing, y=y * spacing + yspacing, width=spacing,
+                                     height=spacing, fill="black", stroke="none")
                     else:
-                        path_data = self._make_round_rect(
-                            x * spacing + x_spacing,
-                            y * spacing + y_spacing,
-                            spacing,
-                            corner_types
-                        )
-                        self.dwg.add(self.dwg.path(d=path_data, fill="black"))
-
+                        square = SVG("path", d=self._make_round_rect(x * spacing + xspacing, y * spacing + yspacing,
+                                      spacing, corner_types), fill="black", stroke="none")
+                    self.g.append(square)
         if self.markers is not None:
             r = self.square_size * 0.17
             pattern_width = ((self.cols - 1.0) * spacing) + (2.0 * r)
             pattern_height = ((self.rows - 1.0) * spacing) + (2.0 * r)
             x_spacing = (self.width - pattern_width) / 2.0
             y_spacing = (self.height - pattern_height) / 2.0
-
             for x, y in self.markers:
-                color = "black" if x % 2 == y % 2 else "white"
-                self.dwg.add(
-                    self.dwg.circle(
-                        center=((x * spacing) + x_spacing + r, (y * spacing) + y_spacing + r), r=r, fill=color))
+                color = "black"
+                if x % 2 == y % 2:
+                    color = "white"
+                dot = SVG("circle", cx=(x * spacing) + x_spacing + r,
+                          cy=(y * spacing) + y_spacing + r, r=r, fill=color, stroke="none")
+                self.g.append(dot)
 
     @staticmethod
     def _create_marker_bits(markerSize_bits, byteList):
+
         marker = np.zeros((markerSize_bits+2, markerSize_bits+2))
         bits = marker[1:markerSize_bits+1, 1:markerSize_bits+1]
 
@@ -169,62 +160,62 @@ class PatternMaker:
         return marker
 
     def make_charuco_board(self):
-        if self.aruco_marker_size > self.square_size:
-            print("Error: Aruco marker cannot be larger than chessboard square!")
+        if (self.aruco_marker_size>self.square_size):
+            print("Error: Aruco marker cannot be lager than chessboard square!")
             return
 
-        if self.dict_file.endswith(".gz"):
+        if (self.dict_file.split(".")[-1] == "gz"):
             with gzip.open(self.dict_file, 'r') as fin:
-                dictionary = json.loads(fin.read().decode('utf-8'))
+                json_bytes = fin.read()
+                json_str = json_bytes.decode('utf-8')
+                dictionary = json.loads(json_str)
+
         else:
-            with open(self.dict_file, 'r') as fin:
-                dictionary = json.load(fin)
+            f = open(self.dict_file)
+            dictionary = json.load(f)
 
-        if dictionary["nmarkers"] < int(self.cols * self.rows / 2):
-            print("Error: Aruco dictionary contains fewer markers than required for the chosen board. "
-                  "Please choose another dictionary or use a smaller board.")
+        if (dictionary["nmarkers"] < int(self.cols*self.rows/2)):
+            print("Error: Aruco dictionary contains less markers than it needs for chosen board. Please choose another dictionary or use smaller board than required for chosen board")
             return
 
-        marker_size_bits = dictionary["markersize"]
-        side = self.aruco_marker_size / (marker_size_bits + 2)
+        markerSize_bits = dictionary["markersize"]
+
+        side = self.aruco_marker_size / (markerSize_bits+2)
         spacing = self.square_size
-        x_spacing = (self.width - self.cols * self.square_size) / 2.0
-        y_spacing = (self.height - self.rows * self.square_size) / 2.0
+        xspacing = (self.width - self.cols * self.square_size) / 2.0
+        yspacing = (self.height - self.rows * self.square_size) / 2.0
 
-        ch_ar_border = (self.square_size - self.aruco_marker_size) / 2.0
-        if ch_ar_border < side * 0.7:
-            print("Marker border {} is less than 70% of ArUco pin size {}. "
-                  "Please increase --square_size or decrease --marker_size for stable board detection".format(
-                ch_ar_border, int(side)))
-            return
-
+        ch_ar_border = (self.square_size - self.aruco_marker_size)/2
+        if ch_ar_border < side*0.7:
+            print("Marker border {} is less than 70% of ArUco pin size {}. Please increase --square_size or decrease --marker_size for stable board detection".format(ch_ar_border, int(side)))
         marker_id = 0
         for y in range(0, self.rows):
             for x in range(0, self.cols):
-                x_pos = x * spacing + x_spacing
-                y_pos = y * spacing + y_spacing
 
                 if x % 2 == y % 2:
-                    self.dwg.add(self.dwg.rect(insert=(x_pos, y_pos), size=(spacing, spacing), fill="black"))
+                    square = SVG("rect", x=x * spacing + xspacing, y=y * spacing + yspacing, width=spacing,
+                                 height=spacing, fill="black", stroke="none")
+                    self.g.append(square)
                 else:
-                    img_mark = self._create_marker_bits(marker_size_bits, dictionary[f"marker_{marker_id}"])
-                    marker_id += 1
+                    img_mark = self._create_marker_bits(markerSize_bits, dictionary["marker_"+str(marker_id)])
+                    marker_id +=1
+                    x_pos = x * spacing + xspacing
+                    y_pos = y * spacing + yspacing
 
-                    self.dwg.add(
-                        self.dwg.rect(
-                            insert=(x_pos + ch_ar_border, y_pos + ch_ar_border),
-                            size=(self.aruco_marker_size, self.aruco_marker_size), fill="black"))
-
+                    square = SVG("rect", x=x_pos+ch_ar_border, y=y_pos+ch_ar_border, width=self.aruco_marker_size,
+                                             height=self.aruco_marker_size, fill="black", stroke="none")
+                    self.g.append(square)
                     for x_ in range(len(img_mark[0])):
                         for y_ in range(len(img_mark)):
-                            if img_mark[y_][x_] != 0:
-                                self.dwg.add(
-                                    self.dwg.rect(
-                                        insert=(x_pos + ch_ar_border + (x_ * side), y_pos + ch_ar_border + (y_ * side)),
-                                        size=(side, side), fill="white", stroke="white", stroke_width=spacing * 0.01))
+                            if (img_mark[y_][x_] != 0):
+                                square = SVG("rect", x=x_pos+ch_ar_border+(x_)*side, y=y_pos+ch_ar_border+(y_)*side, width=side,
+                                             height=side, fill="white", stroke="white", stroke_width = spacing*0.01)
+                                self.g.append(square)
 
     def save(self):
-        self.dwg.save()
+        c = canvas(self.g, width="%d%s" % (self.width, self.units), height="%d%s" % (self.height, self.units),
+                   viewBox="0 0 %d %d" % (self.width, self.height))
+        c.save(os.path.join(os.getcwd(), self.output))
 
 
 def main():
@@ -235,7 +226,7 @@ def main():
     parser.add_argument("-c", "--columns", help="pattern columns", default="8", action="store", dest="columns",
                         type=int)
     parser.add_argument("-r", "--rows", help="pattern rows", default="11", action="store", dest="rows", type=int)
-    parser.add_argument("-T", "--type", help="type of pattern", default="checkerboard", action="store", dest="p_type",
+    parser.add_argument("-T", "--type", help="type of pattern", default="circles", action="store", dest="p_type",
                         choices=["circles", "acircles", "checkerboard", "radon_checkerboard", "charuco_board"])
     parser.add_argument("-u", "--units", help="length unit", default="mm", action="store", dest="units",
                         choices=["mm", "inches", "px", "m"])
@@ -253,10 +244,10 @@ def main():
                                                 "coordinates as list of numbers: -m 1 2 3 4 means markers in cells "
                                                 "[1, 2] and [3, 4]",
                         default=argparse.SUPPRESS, action="store", dest="markers", nargs="+", type=int)
-    parser.add_argument("-p", "--marker_size", help="aruco markers size for ChAruco pattern (default 10.0)",
-                        default="10.0", action="store", dest="aruco_marker_size", type=float)
-    parser.add_argument("-f", "--dict_file", help="file name of custom aruco dictionary for ChAruco pattern",
-                        default="DICT_ARUCO_ORIGINAL.json", action="store", dest="dict_file", type=str)
+    parser.add_argument("-p", "--marker_size", help="aruco markers size for ChAruco pattern (default 10.0)", default="10.0",
+                        action="store", dest="aruco_marker_size", type=float)
+    parser.add_argument("-f", "--dict_file", help="file name of custom aruco dictionary for ChAruco pattern", default="DICT_ARUCO_ORIGINAL.json",
+                        action="store", dest="dict_file", type=str)
     args = parser.parse_args()
 
     show_help = args.show_help
@@ -303,7 +294,7 @@ def main():
           "checkerboard": pm.make_checkerboard_pattern, "radon_checkerboard": pm.make_radon_checkerboard_pattern,
          "charuco_board": pm.make_charuco_board}
     mp[p_type]()
-
+    # this should save pattern to output
     pm.save()
 
 

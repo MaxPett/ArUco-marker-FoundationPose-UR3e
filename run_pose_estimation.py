@@ -39,7 +39,6 @@ def execute_pattern_generation(columns, rows, calib_type, pattern_name, pattern_
                "-s", str(pattern_size),
                "-a", page_size]
     # more options available!
-
     result = subprocess.run(command, capture_output=True, text=True)
     check_execution(result)
 
