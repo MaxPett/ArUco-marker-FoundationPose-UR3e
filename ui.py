@@ -19,13 +19,10 @@ def user_requests():
 
     # GUI control variables
     save_result = tk.BooleanVar()
-    pose_result = tk.BooleanVar()
     aruco_type = tk.StringVar()
     video_size = tk.StringVar(value="200")
     save_yes_var = tk.BooleanVar()
     save_no_var = tk.BooleanVar()
-    pose_yes_var = tk.BooleanVar()
-    pose_no_var = tk.BooleanVar()
 
     # Input validation for ArUco marker size
     def validate_size(value):
@@ -47,22 +44,11 @@ def user_requests():
         if save_no_var.get():
             save_yes_var.set(False)
 
-    def on_pose_yes():
-        if pose_yes_var.get():
-            pose_no_var.set(False)
-
-    def on_pose_no():
-        if pose_no_var.get():
-            pose_yes_var.set(False)
-
     # Form submission handler
     def on_submit():
         # Validate all inputs before proceeding
         if not (save_yes_var.get() or save_no_var.get()):
             messagebox.showerror("Error", "Please select Yes or No for saving video")
-            return
-        if not (pose_yes_var.get() or pose_no_var.get()):
-            messagebox.showerror("Error", "Please select Yes or No for pose estimation")
             return
         try:
             size = int(video_size.get())
@@ -74,7 +60,6 @@ def user_requests():
             return
 
         save_result.set(save_yes_var.get())  # True if Yes is checked, False if No is checked
-        pose_result.set(pose_yes_var.get())  # True if Yes is checked, False if No is checked
         new_window.destroy()
 
     # GUI Layout setup
@@ -91,17 +76,6 @@ def user_requests():
     save_yes_check.pack(side=tk.LEFT, padx=10)
     save_no_check = ttk.Checkbutton(save_frame, text="No", variable=save_no_var, command=on_save_no)
     save_no_check.pack(side=tk.LEFT, padx=10)
-
-    # Pose estimation question
-    pose_label = ttk.Label(main_frame, text="Do you want to run pose estimation?", font=("Arial", 12))
-    pose_label.pack(pady=10)
-
-    pose_frame = ttk.Frame(main_frame)
-    pose_frame.pack(pady=5)
-    pose_yes_check = ttk.Checkbutton(pose_frame, text="Yes", variable=pose_yes_var, command=on_pose_yes)
-    pose_yes_check.pack(side=tk.LEFT, padx=10)
-    pose_no_check = ttk.Checkbutton(pose_frame, text="No", variable=pose_no_var, command=on_pose_no)
-    pose_no_check.pack(side=tk.LEFT, padx=10)
 
     # ArUco dictionary dropdown
     aruco_label = ttk.Label(main_frame, text="Select ArUco Dictionary:", font=("Arial", 12))
@@ -128,8 +102,8 @@ def user_requests():
     # Wait for the window to close
     new_window.mainloop()
 
-    # Return the results as a tuple (save_video, run_pose_estimation, aruco_type, video_size)
-    return save_result.get(), pose_result.get(), aruco_type.get(), int(video_size.get())
+    # Return the results as a tuple (save_video, aruco_type, video_size)
+    return save_result.get(), aruco_type.get(), int(video_size.get())
 
 
 if __name__ == "__main__":

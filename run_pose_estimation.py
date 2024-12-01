@@ -65,7 +65,7 @@ def execute_aruco_tag_generation(output_path, tag_type, tag_size):
 
 def execute_pose_estimation(tag_size, cam_matrix, d_coeff, tag_type):
     # Construct the command with mandatory elements
-    # TODO: transform size to pixel, extract camera matrix and coefficients from file, include save state? 
+    # TODO: transform size to pixel, extract camera matrix and coefficients from file, include save state?
     command = ["python", "pose_estimation.py",
                "-s", tag_size,
                "-k", cam_matrix,
@@ -81,11 +81,10 @@ if __name__ == "__main__":
     #execute_pattern_generation(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CALIB_TYPE, CALIB_PATTERN_SIZE, CALIB_PAGE_SIZE)
     # check if calib images of correct pattern
     #execute_calibration(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CAM_NR, CALIB_IMG_PATH, CALIB_PATTERN_SIZE)
-    save_video_state, pose_estimation_state, aruco_tag, aruco_size = user_requests()
+    save_video_state, aruco_tag, aruco_size = user_requests()
     # Generate ArUco tag with user-specified parameters
     execute_aruco_tag_generation(ARUCO_TAG_PATH, aruco_tag, aruco_size)
-    if pose_estimation_state:
-        execute_pose_estimation(aruco_size, CALIB_IMG_PATH, aruco_tag, save_video_state)
+    execute_pose_estimation(aruco_size, CALIB_IMG_PATH, aruco_tag, save_video_state)
     print('DONE!')
 
 
