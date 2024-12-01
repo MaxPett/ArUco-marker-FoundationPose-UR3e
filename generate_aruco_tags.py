@@ -139,10 +139,11 @@ def marker_enhancement(aruco_dict_tag):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-o", "--output", required=True, help="Path to output folder to save ArUCo tag")
-    ap.add_argument("-i", "--id", type=int, required=True, help="ID of ArUCo tag to generate")
+    ap.add_argument("-i", "--id", type=int, required=False, help="ID of ArUCo tag to generate")
     ap.add_argument("-t", "--type", type=str, default="DICT_ARUCO_ORIGINAL", help="Type of ArUCo tag to generate")
     ap.add_argument("-s", "--size", type=int, default=200, help="Size of the ArUCo tag")
     args = vars(ap.parse_args())
-
+    if not args["id"]:
+        args["id"] = list(ARUCO_DICT.keys()).index(args["type"]) + 1
     # Call the function with parsed arguments
     generate_aruco_tag(args["output"], args["id"], args["type"], args["size"])
