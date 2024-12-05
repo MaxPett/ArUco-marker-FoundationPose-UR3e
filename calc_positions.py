@@ -2,21 +2,21 @@ import numpy as np
 import pandas
 import pandas as pd
 
-HOME_COORDINATES_X = 0
-HOME_COORDINATES_Y = 0
-HOME_COORDINATES_Z = 0
-HOME_ROTATION_RX = 0
-HOME_ROTATION_RY = 0
-HOME_ROTATION_RZ = 0
+HOME_COORDINATES_X = 438.75
+HOME_COORDINATES_Y = -77.3
+HOME_COORDINATES_Z = 10.15
+HOME_ROTATION_RX = 0.420
+HOME_ROTATION_RY = -2.375
+HOME_ROTATION_RZ = 2.381
 
-START_COORDINATES_X = 100
-START_COORDINATES_Y = 100
-START_COORDINATES_Z = 100
-START_ROTATION_RX = 0
-START_ROTATION_RY = 0
-START_ROTATION_RZ = 0
+START_COORDINATES_X = 395.0
+START_COORDINATES_Y = -115
+START_COORDINATES_Z = 17
+START_ROTATION_RX = 0.627
+START_ROTATION_RY = -1.766
+START_ROTATION_RZ = 1.678
 
-CUBE_SIDE_LENGTH = 10
+CUBE_SIDE_LENGTH = 50
 ROTATION_STEP_ANGLE = 5  # in degrees
 ROTATION_STEPS = 2
 
@@ -104,6 +104,9 @@ def generate_coordinates_matrix(home_point, start_point, side_length, step_angle
             rotated_point = point_rotation(settings_df.iloc[[i]], step_angle, steps)
             coordinates_df = pd.concat([coordinates_df, rotated_point], ignore_index=True)
     coordinates_df.columns = ['X', 'Y', 'Z', 'RX', 'RY', 'RZ']
+    metric_coords = coordinates_df.copy()
+    metric_coords.iloc[:, :3] = metric_coords.iloc[:, :3] * 0.001
+    metric_coords.to_csv("ur3e_coordinates.csv")
     return coordinates_df
 
 
@@ -117,7 +120,7 @@ def calculate_change_vectors(df, np_home):
     # Handle the last row by subtracting the first row
     last_row_result = np_home - df.iloc[-2]
     result_df = pd.concat([result_df, pd.DataFrame([last_row_result])], ignore_index=True)
-    print(result_df)
+    return result_df
 
 
 if __name__ == '__main__':
@@ -126,5 +129,5 @@ if __name__ == '__main__':
     start = np.array([START_COORDINATES_X, START_COORDINATES_Y, START_COORDINATES_Z,
                       START_ROTATION_RX, START_ROTATION_RY, START_ROTATION_RZ])
     df_coord = generate_coordinates_matrix(home, start, CUBE_SIDE_LENGTH, ROTATION_STEP_ANGLE, ROTATION_STEPS)
-    calculate_change_vectors(df_coord, home)
-
+    df_change = calculate_change_vectors(df_coord, home)
+    print(df_coord)
