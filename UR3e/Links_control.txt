@@ -1,0 +1,24 @@
+https://www.powerflotechnologies.com/single-post/controlling-a-universal-robots-cobot-using-python
+
+https://github.com/martinbjerge/ur-interface/tree/master
+
+https://github.com/DavidUrz/URBasic/tree/main
+
+https://github.com/robin-gdwl/UR_Facetracking/tree/master
+https://www.youtube.com/watch?v=9XCNE0BmtUg
+
+https://github.com/danielstankw/Servoj_RTDE_UR5
+https://www.youtube.com/watch?v=hl89UeCNqkI&list=PLnJ9fSRnDN3B1wEuxQY4thTWyGoT2N0yd&index=2
+
+https://github.com/sollynoay/UR_kinematics
+
+
+Virtual simulation (LINUX!!!):
+https://www.universal-robots.com/download/software-e-series/simulator-non-linux/offline-simulator-e-series-ur-sim-for-non-linux-5126-lts/
+
+For Fotis:
+https://github.com/sollynoay/ur3e-robotiq
+
+
+
+https://robodk.com/doc/en/Robots-Universal-Robots-URSim-Installation-guide.html

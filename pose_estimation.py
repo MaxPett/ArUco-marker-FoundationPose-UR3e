@@ -10,19 +10,65 @@ import os
 # https://github.com/GSNCodes/ArUCo-Markers-Pose-Estimation-Generation-Python
 
 
-def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coefficients, tag_size):
+def calc_transformation_matrix(r_vec, t_vec):
+    # Convert rotation vector to rotation matrix
+    rotation_matrix, _ = cv2.Rodrigues(r_vec)
+
+    # Translation vector
+    translation_vector = t_vec
+
+    # Construct the transformation matrix
+    transformation_matrix = np.hstack((rotation_matrix, translation_vector.reshape(3, 1)))
+    transformation_matrix = np.vstack((transformation_matrix, np.array([0, 0, 0, 1])))
+    return transformation_matrix
+
+
+def img_point_to_world_point(r_vec_img, t_vec_img, marker_size, r_vec_world, t_vec_world):
+    # Construct the image transformation matrix
+    img_trans_matrix = calc_transformation_matrix(r_vec_img, t_vec_img)
+
+    # Define the local coordinates of the marker's corners - Assuming the marker's center is at the origin (0, 0, 0)
+    local_points = np.array([
+        [-marker_size / 2, -marker_size / 2, 0, 1],
+        [marker_size / 2, -marker_size / 2, 0, 1],
+        [marker_size / 2, marker_size / 2, 0, 1],
+        [-marker_size / 2, marker_size / 2, 0, 1]
+    ], dtype=np.float32)
+
+    # Transform the local points to the camera coordinate system
+    camera_points = np.dot(img_trans_matrix, local_points.T).T
+
+    # Extract the 3D coordinates
+    camera_points = camera_points[:, :3]
+
+    # Construct the world transformation matrix
+    # world_trans_matrix = calc_transformation_matrix(r_vec_world, t_vec_world)
+
+    # Transform the camera points to world coordinates
+    # world_points = np.dot(world_trans_matrix, np.hstack((camera_points, np.ones((camera_points.shape[0], 1)))).T).T
+
+    # Extract the 3D coordinates
+    # world_points = world_points[:, :3]
+    # return world_points
+    return camera_points
+
+def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coefficients, tag_size,
+                    world_trans_vector, world_rot_vector):
     '''
     frame - Frame from the video stream
     matrix_coefficients - Intrinsic matrix of the calibrated camera
     distortion_coefficients - Distortion coefficients associated with your camera
     tag_size - Size of ArUco Tag in pixels
+    world_translation_vector - Translation vector of the camera calibration
+    world_rotation_vector - Rotation vector of the camera calibration
 
     return:-
     frame - The frame with the axis drawn on it
     '''
 
     # Tag size convertion from pixels to meters
-    metric_tag_size = tag_size*(0.2645833333/1000)
+    # metric_tag_size = tag_size*(0.2645833333/1000)
+    metric_tag_size = tag_size
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     aruco_dict = cv2.aruco.getPredefinedDictionary(aruco_dict_type)
@@ -33,7 +79,7 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
     detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
     corners, ids, rejected = detector.detectMarkers(gray)
 
-    # Perform subpixel corner detection - might decrease stability or delay detection!
+    # Todo: Check perform subpixel corner detection - might decrease stability or delay detection!
     if len(corners) > 0:
         # Prepare criteria for corner refinement
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.01)
@@ -61,6 +107,24 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
 
             frame = cv2.drawFrameAxes(frame, camera_coefficients, distortion_coefficients,
                                       rvec, tvec, 0.5 * metric_tag_size)
+
+            # Determine coordinates of marker's origin
+            coordinates = img_point_to_world_point(rvec, tvec, metric_tag_size, world_rot_vector, world_trans_vector)
+            origin_x = np.mean(coordinates[:, 0])
+            origin_y = np.mean(coordinates[:, 1])
+            origin_z = np.mean(coordinates[:, 2])
+            text = f"Origin of ArUco marker {i+1}: X = {origin_x:.1f} cm, Y = {origin_y:.1f} cm, Z = {origin_z:.1f} cm"
+            (text_width, text_height), text_baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)
+            cv2.putText(frame, text, (10, (i+1)*text_height), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7,
+                        (0, 0, 255), 1, cv2.LINE_AA)
+
+            # Check scaling and transformation
+            marker_length = np.abs(coordinates[0, 0] - coordinates[1, 0])
+            text_marker_size = f"Length of ArUco marker {i+1}: {marker_length:.1f} pixel?"
+            (text_marker_width, text_marker_height), text_baseline = cv2.getTextSize(text_marker_size, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)
+            cv2.putText(frame, text_marker_size,
+                        ((frame.shape[1] - (text_marker_width + 10)), (frame.shape[0] - ((i + 1) * text_marker_height + 10))),
+                        cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7, (0, 0, 255), 1, cv2.LINE_AA)
 
     return frame
 
@@ -137,7 +201,7 @@ def main():
         if not ret:
             break
 
-        output = pose_estimation(frame, aruco_dict_type, k, d, s)
+        output = pose_estimation(frame, aruco_dict_type, k, d, s, t, r)
         if video_state:
             # Write the frame to the output files
             video_writer.write(output)
