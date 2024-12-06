@@ -5,9 +5,57 @@ from calibrate import ARUCO_DICT
 import argparse
 import time
 import os
+import socket
+import threading
 
 # Adapted form GSNCodes ArUCo-Markers-Pose-Estimation-Generation-Python
 # https://github.com/GSNCodes/ArUCo-Markers-Pose-Estimation-Generation-Python
+
+# ####################### Socket configurations ############################################ #
+
+# Server configuration
+HOST = '127.0.0.1'  # Localhost
+PORT = 65432        # Port for the server
+
+# Shared list to store messages
+received_messages = []
+
+
+def server_thread():
+    """Thread function to handle incoming client connections."""
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind((HOST, PORT))
+    server_socket.listen()
+    print(f"Server started at {HOST}:{PORT}")
+
+    while True:
+        conn, addr = server_socket.accept()
+        print(f"Connected by {addr}")
+        threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
+
+
+def handle_client(conn, addr):
+    """Handles a single client connection."""
+    try:
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            message = data.decode()
+            print(f"Received message: {message}")
+            received_messages.append(message)  # Store the message for retrieval
+    except ConnectionResetError:
+        print(f"Connection with {addr} closed.")
+    finally:
+        conn.close()
+
+
+# Example function to retrieve received messages
+def get_received_messages():
+    """Returns all messages received so far."""
+    return received_messages
+
+# ###################### Pose estimation ##################################### #
 
 
 def calc_transformation_matrix(r_vec, t_vec):
@@ -52,6 +100,7 @@ def img_point_to_world_point(r_vec_img, t_vec_img, marker_size, r_vec_world, t_v
     # return world_points
     return camera_points
 
+
 def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coefficients, tag_size,
                     world_trans_vector, world_rot_vector):
     '''
@@ -94,6 +143,7 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
         # Replace original corners with refined corners
         corners = refined_corners
 
+    list_coordinates = []
     # If markers are detected
     if len(corners) > 0 and ids is not None:
         for i in range(len(ids)):
@@ -113,6 +163,7 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
             origin_x = np.mean(coordinates[:, 0])
             origin_y = np.mean(coordinates[:, 1])
             origin_z = np.mean(coordinates[:, 2])
+            list_coordinates.append([origin_x, origin_y, origin_z])
             text = f"Origin of ArUco marker {i+1}: X = {origin_x:.1f} cm, Y = {origin_y:.1f} cm, Z = {origin_z:.1f} cm"
             (text_width, text_height), text_baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)
             cv2.putText(frame, text, (10, (i+1)*text_height), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7,
@@ -126,7 +177,7 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
                         ((frame.shape[1] - (text_marker_width + 10)), (frame.shape[0] - ((i + 1) * text_marker_height + 10))),
                         cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7, (0, 0, 255), 1, cv2.LINE_AA)
 
-    return frame
+    return frame, list_coordinates
 
 
 def video_writer_object(source, video_name):
@@ -182,8 +233,24 @@ def main():
     t = calibration_parameters_path['t_vec']
     s = int(tag_pixel_size)
 
+    # Setup socket server for message exchange with ur3e roboter control_loop.py
+    server_thread_instance = threading.Thread(target=server_thread, daemon=True)
+    server_thread_instance.start()
+
     video = cv2.VideoCapture(cam_id)
     time.sleep(2.0)
+
+    # Variables for saving images while running robot
+    save_frame_state = False
+    save_frame_pos = ""
+
+    # Todo: adapt to dyn. name
+    obj_name = "Aruco"
+    if not os.path.exists("pose_estimation"):
+        os.mkdir("pose_estimation")
+
+    if not os.path.exists(f"pose_estimation/{obj_name}"):
+        os.mkdir(f"pose_estimation/{obj_name}")
 
     if video_state:
         if not os.path.exists(video_dir):
@@ -201,10 +268,27 @@ def main():
         if not ret:
             break
 
-        output = pose_estimation(frame, aruco_dict_type, k, d, s, t, r)
+        # Check if message from ur3e --> then set save_frame_state=True --> save frame to directory
+        if received_messages:
+            # Todo: assemble name
+            save_frame_pos = get_received_messages()
+            save_frame_state = True
+            received_messages.clear()  # Clear after processing
+
+        # Perform pose estimation
+        output, list_detected_coords = pose_estimation(frame, aruco_dict_type, k, d, s, t, r)
+
         if video_state:
             # Write the frame to the output files
             video_writer.write(output)
+
+        if len(list_detected_coords) > 0:
+            if save_frame_state:
+                for nr, marker in enumerate(list_detected_coords):
+                    marker = [round(coord, 2) for coord in marker]
+                    img_name = f"pose_estimation/{obj_name}/{obj_name}{nr}_{save_frame_pos}_{marker[0]}_{marker[1]}_{marker[2]}.jpg"
+                    cv2.imwrite(img_name, frame)
+            save_frame_state = False
 
         win_name = 'Estimated Pose'
         cv2.imshow(win_name, output)

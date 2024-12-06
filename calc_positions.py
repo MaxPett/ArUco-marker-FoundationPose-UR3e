@@ -2,21 +2,21 @@ import numpy as np
 import pandas
 import pandas as pd
 
-HOME_COORDINATES_X = 430
-HOME_COORDINATES_Y = -280
-HOME_COORDINATES_Z = 400
-HOME_ROTATION_RX = 0.420
-HOME_ROTATION_RY = -2.375
-HOME_ROTATION_RZ = 2.381
+HOME_COORDINATES_X = -433.75
+HOME_COORDINATES_Y = 107.71
+HOME_COORDINATES_Z = 480.8
+HOME_ROTATION_RX = 2.151
+HOME_ROTATION_RY = 2.434
+HOME_ROTATION_RZ = -2.635
 
-START_COORDINATES_X = 300
-START_COORDINATES_Y = -200
-START_COORDINATES_Z = 300
-START_ROTATION_RX = 0.487
-START_ROTATION_RY = -1.767
-START_ROTATION_RZ = 1.580
+START_COORDINATES_X = -143.3
+START_COORDINATES_Y = -353
+START_COORDINATES_Z = 454
+START_ROTATION_RX = 0.052
+START_ROTATION_RY = 2.295
+START_ROTATION_RZ = -2.185
 
-CUBE_SIDE_LENGTH = 20
+CUBE_SIDE_LENGTH = 100
 ROTATION_STEP_ANGLE = 5  # in degrees
 ROTATION_STEPS = 2
 
@@ -120,6 +120,8 @@ def check_boundaries(ur3e_min, ur3e_max, df):
     res_vec_square = df_check['X']*df_check['X']+df_check['Y']*df_check['Y']+df_check['Z']*df_check['Z']
     max_magnitude = np.sqrt(np.max(res_vec_square))
     min_magnitude = np.sqrt(np.min(res_vec_square))
+    # Todo: activate distance check
+    '''
     if min_magnitude < ur3e_min:
         delta = ur3e_min - min_magnitude
         raise ValueError(f"Safety distance to the base of the robot is too small by {delta} mm.")
@@ -127,7 +129,7 @@ def check_boundaries(ur3e_min, ur3e_max, df):
     if max_magnitude > ur3e_max:
         delta = max_magnitude - ur3e_max
         raise ValueError(f"Maximum travel distance of robot exceeded by {delta} mm.")
-
+    '''
     metric_coords = df.copy()
     metric_coords.iloc[:, :3] = metric_coords.iloc[:, :3] * 0.001
     metric_coords.to_csv("ur3e_coordinates.csv")
