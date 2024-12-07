@@ -270,8 +270,11 @@ def main():
 
         # Check if message from ur3e --> then set save_frame_state=True --> save frame to directory
         if received_messages:
-            # Todo: assemble name
             save_frame_pos = get_received_messages()
+            save_frame_pos = eval(save_frame_pos[-1].split('_')[-1])
+            save_frame_pos = np.array(save_frame_pos)
+            save_frame_pos[:3] = 1000 * save_frame_pos[:3]
+            save_frame_pos = [float(round(coord, 2)) for coord in save_frame_pos]
             save_frame_state = True
             received_messages.clear()  # Clear after processing
 
@@ -285,8 +288,8 @@ def main():
         if len(list_detected_coords) > 0:
             if save_frame_state:
                 for nr, marker in enumerate(list_detected_coords):
-                    marker = [round(coord, 2) for coord in marker]
-                    img_name = f"pose_estimation/{obj_name}/{obj_name}{nr}_{save_frame_pos}_{marker[0]}_{marker[1]}_{marker[2]}.jpg"
+                    marker = [float(round(coord, 2)) for coord in marker]
+                    img_name = f"pose_estimation/{obj_name}/{obj_name}{nr}_{save_frame_pos}_{marker}.jpg"
                     cv2.imwrite(img_name, frame)
             save_frame_state = False
 
