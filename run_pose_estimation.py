@@ -2,7 +2,7 @@ import subprocess
 from ui import user_requests
 
 
-CAM_NR = 0   # 0 use internal camera
+CAM_NR = 2   # check device manager (0 for internal webcam)
 CALIB_ROWS = 11
 CALIB_COLUMNS = 8
 CALIB_TYPE = 'checkerboard'  # circles, acircles, checkerboard, radon_checkerboard, charuco_board.

@@ -293,6 +293,11 @@ def main():
                     cv2.imwrite(img_name, frame)
             save_frame_state = False
 
+        # draw line for alignment
+        width = int(video.get(3))  # float `width`
+        height = int(video.get(4))  # float `height`
+        cv2.line(output, (int(width/2), 0), (int(width/2), height), (0, 255, 0), 1)
+        cv2.line(output, (0, int(height/2)), (width, int(height/2)), (0, 255, 0), 1)
         win_name = 'Estimated Pose'
         cv2.imshow(win_name, output)
 

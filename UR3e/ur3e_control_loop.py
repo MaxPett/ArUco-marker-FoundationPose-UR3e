@@ -132,8 +132,8 @@ current_index = 0  # To track the current row in the DataFrame
 pause_state = False
 time_pause = time.time()
 camera_cmd_send = False
-time_until_camera_cmd = 2  # time for stabilisation before image campturing
-total_wait_time = 4  # must be bigger than time_until_camera_cmd --> time for image capturing
+time_until_camera_cmd = 0.5  # time for stabilisation before image campturing
+total_wait_time = 1  # must be bigger than time_until_camera_cmd --> time for image capturing
 
 while keep_running:
     # receive the current state
@@ -156,7 +156,7 @@ while keep_running:
             camera_cmd_send = False
 
     # state.output_int_register_0 == 1 --> roboter signals that it is ready for next command
-    if move_completed and state.output_int_register_0 == 1 and not pause_state:
+    if move_completed and state.output_int_register_0 == 1 and not pause_state and current_index <= len(setpoints):
         move_completed = False
         # Get the new setpoint from the DataFrame
         new_setp = setpoints[current_index]
