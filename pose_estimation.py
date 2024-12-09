@@ -164,7 +164,7 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
             origin_y = np.mean(coordinates[:, 1])
             origin_z = np.mean(coordinates[:, 2])
             list_coordinates.append([origin_x, origin_y, origin_z])
-            text = f"Origin of ArUco marker {i+1}: X = {origin_x:.1f} cm, Y = {origin_y:.1f} cm, Z = {origin_z:.1f} cm"
+            text = f"Origin of ArUco marker {i+1}: X = {origin_x:.1f} mm, Y = {origin_y:.1f} mm, Z = {origin_z:.1f} mm"
             (text_width, text_height), text_baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)
             cv2.putText(frame, text, (10, (i+1)*text_height), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7,
                         (0, 0, 255), 1, cv2.LINE_AA)

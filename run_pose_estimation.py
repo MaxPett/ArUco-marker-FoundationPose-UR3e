@@ -1,3 +1,4 @@
+import os
 import subprocess
 from ui import user_requests
 
@@ -79,15 +80,35 @@ def execute_pose_estimation(cam_id, tag_size, cam_parameters_path, tag_type, rec
     check_execution(result)
 
 
+def execute_ur3e_control():
+    work_dir = os.getcwd()
+    os.chdir("UR3e")
+    try:
+        # Adjust the command to launch in a new command-line window
+        if os.name == 'nt':  # Windows
+            command = f'start cmd /k "python ur3e_control_loop.py"'
+        else:  # macOS/Linux
+            command = f'xterm -hold -e "python ur3e_control_loop.py"'
+
+        # Execute the command
+        process = subprocess.Popen(command, shell=True)
+
+        # Optionally wait for the process or handle it differently
+        process.communicate()
+    finally:
+        os.chdir(work_dir)
+
+
 if __name__ == "__main__":
     CALIB_COLUMNS = 7
     CALIB_ROWS = 9
-    #execute_pattern_generation(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CALIB_TYPE, CALIB_PATTERN_SIZE, CALIB_PAGE_SIZE)
+    execute_pattern_generation(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CALIB_TYPE, CALIB_PATTERN_SIZE, CALIB_PAGE_SIZE)
     # check if calib images of correct pattern
-    #execute_calibration(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CAM_NR, CALIB_IMG_PATH, CALIB_PATTERN_SIZE)
+    execute_calibration(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CAM_NR, CALIB_IMG_PATH, CALIB_PATTERN_SIZE)
     save_video_state, aruco_tag, aruco_size = user_requests()
     # Generate ArUco tag with user-specified parameters
     execute_aruco_tag_generation(ARUCO_TAG_PATH, aruco_tag, aruco_size)
+    execute_ur3e_control()
     execute_pose_estimation(CAM_NR, aruco_size, CALIB_IMG_PATH, aruco_tag, save_video_state, VIDEO_PATH)
     print('DONE!')
 

@@ -296,6 +296,7 @@ def main():
     mp[p_type]()
     # this should save pattern to output
     pm.save()
+    print(f"Calibration pattern generated and saved as {output}!")
 
 
 if __name__ == "__main__":
