@@ -115,9 +115,9 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
     frame - The frame with the axis drawn on it
     '''
 
-    # Tag size convertion from pixels to meters
-    # metric_tag_size = tag_size*(0.2645833333/1000)
-    metric_tag_size = tag_size
+    # Tag size convertion from pixels to millimeters
+    metric_tag_size = tag_size*0.2645833333
+    # metric_tag_size = tag_size # for output in pixel 
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     aruco_dict = cv2.aruco.getPredefinedDictionary(aruco_dict_type)

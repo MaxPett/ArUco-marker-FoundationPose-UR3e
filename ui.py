@@ -82,7 +82,7 @@ def user_requests():
     aruco_label.pack(pady=10)
     aruco_dropdown = ttk.Combobox(main_frame, textvariable=aruco_type, values=list(ARUCO_DICT.keys()), state="readonly")
     aruco_dropdown.pack()
-    aruco_dropdown.set(list(ARUCO_DICT.keys())[0])  # Set default value
+    aruco_dropdown.set(list(ARUCO_DICT.keys())[12])  # Set default value
 
     # ArUco size input
     size_frame = ttk.Frame(main_frame)
