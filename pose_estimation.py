@@ -157,24 +157,31 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
 
             frame = cv2.drawFrameAxes(frame, camera_coefficients, distortion_coefficients,
                                       rvec, tvec, 0.5 * metric_tag_size)
-
+            # Todo: export rvec --> rotation values --> 0 equals 135° adapt!
             # Determine coordinates of marker's origin
             coordinates = img_point_to_world_point(rvec, tvec, metric_tag_size, world_rot_vector, world_trans_vector)
             origin_x = np.mean(coordinates[:, 0])
             origin_y = np.mean(coordinates[:, 1])
             origin_z = np.mean(coordinates[:, 2])
-            list_coordinates.append([origin_x, origin_y, origin_z])
+            origins = list([origin_x, origin_y, origin_z])
+            rots = np.squeeze(rvec)
+            origins.extend(rots)
+            coords_rots = [float(round(elem, 2)) for elem in origins]
+            list_coordinates.append(coords_rots)
+
             text = f"Origin of ArUco marker {i+1}: X = {origin_x:.1f} mm, Y = {origin_y:.1f} mm, Z = {origin_z:.1f} mm"
             (text_width, text_height), text_baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)
-            cv2.putText(frame, text, (10, (i+1)*text_height), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7,
+            cv2.putText(frame, text, (10, (i*2)*text_height), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7,
                         (0, 0, 255), 1, cv2.LINE_AA)
-
+            text_2 = f"RX = {rots[0]:.1f} rad, RY = {rots[1]:.1f} rad, RZ = {rots[2]:.1f} rad"
+            cv2.putText(frame, text, (10, ((i + 1)*2) * text_height), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7,
+                        (0, 0, 255), 1, cv2.LINE_AA)
             # Check scaling and transformation
             marker_length = np.abs(coordinates[0, 0] - coordinates[1, 0])
             text_marker_size = f"Length of ArUco marker {i+1}: {marker_length:.1f} pixel?"
             (text_marker_width, text_marker_height), text_baseline = cv2.getTextSize(text_marker_size, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)
             cv2.putText(frame, text_marker_size,
-                        ((frame.shape[1] - (text_marker_width + 10)), (frame.shape[0] - ((i + 1) * text_marker_height + 10))),
+                        ((frame.shape[1] - (text_marker_width - 10)), (frame.shape[0] - ((i + 1) * text_marker_height + 10))),
                         cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7, (0, 0, 255), 1, cv2.LINE_AA)
 
     return frame, list_coordinates
