@@ -203,8 +203,9 @@ def video_writer_object(source, video_name):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("-i", "--cam_id", required=False, type=int, default=0, help="Size of tag (pixels)")
-    ap.add_argument("-s", "--S_TagSize", required=True, help="Size of tag (mm)")
+    ap.add_argument("-i", "--Cam_id", required=False, type=int, default=0, help="Size of tag (pixels)")
+    ap.add_argument("-s", "--S_TagSize", required=True, help="Size of tag (px)")
+    ap.add_argument("-n", "--Object_name", required=True, help="Name of the test object")
     ap.add_argument("-c", "--Calib_param", required=True, type=np.load, help="Path to calibration parameters file (numpy file)")
     ap.add_argument("-t", "--type", required=False, type=str, default="DICT_ARUCO_ORIGINAL",
                     help="Type of ArUCo tag to detect")
@@ -220,9 +221,10 @@ def main():
     aruco_dict_type = ARUCO_DICT[args["type"]]
     calibration_parameters_path = args["Calib_param"]
     tag_pixel_size = args["S_TagSize"]
-    cam_id = args["cam_id"]
+    cam_id = args["Cam_id"]
     video_state = eval(args["video"])
     video_dir = args["folder"]
+    obj_name = args["Object_name"]
 
     k = calibration_parameters_path['cam_matrix']
     d = calibration_parameters_path['dist_coeff']
@@ -241,8 +243,6 @@ def main():
     save_frame_state = False
     save_frame_pos = ""
 
-    # Todo: adapt to dyn. name
-    obj_name = "Aruco"
     if not os.path.exists("pose_estimation"):
         os.mkdir("pose_estimation")
 

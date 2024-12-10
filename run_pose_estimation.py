@@ -64,13 +64,13 @@ def execute_aruco_tag_generation(output_path, tag_type, tag_size):
     check_execution(result)
 
 
-def execute_pose_estimation(cam_id, tag_size, cam_parameters_path, tag_type, recording, folder_rec):
+def execute_pose_estimation(cam_id, tag_size, obj_name, cam_parameters_path, tag_type, recording, folder_rec):
     cam_parameters_path += ".npz"
     # Construct the command with mandatory elements
-    # TODO: transform size to pixel, extract camera matrix and coefficients from file, include save state?
     command = ["python", "pose_estimation.py",
                "-i", str(cam_id),
                "-s", str(tag_size),
+               "-n", str(obj_name),
                "-c", cam_parameters_path,
                "-t", tag_type,
                "-v", str(recording),
@@ -80,15 +80,15 @@ def execute_pose_estimation(cam_id, tag_size, cam_parameters_path, tag_type, rec
     check_execution(result)
 
 
-def execute_ur3e_control():
+def execute_ur3e_control(ip_address):
     work_dir = os.getcwd()
     os.chdir("UR3e")
     try:
         # Adjust the command to launch in a new command-line window
         if os.name == 'nt':  # Windows
-            command = f'start cmd /k "python ur3e_control_loop.py --robot_host 192.168.1.3"'
+            command = f'start cmd /k "python ur3e_control_loop.py --robot_host {ip_address}"'
         else:  # macOS/Linux
-            command = f'xterm -hold -e "python ur3e_control_loop.py --robot_host 192.168.1.3"'
+            command = f'xterm -hold -e "python ur3e_control_loop.py --robot_host {ip_address}"'
 
         # Execute the command
         process = subprocess.Popen(command, shell=True)
@@ -105,11 +105,11 @@ if __name__ == "__main__":
     execute_pattern_generation(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CALIB_TYPE, CALIB_PATTERN_SIZE, CALIB_PAGE_SIZE)
     # check if calib images of correct pattern
     execute_calibration(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CAM_NR, CALIB_IMG_PATH, CALIB_PATTERN_SIZE)
-    save_video_state, aruco_tag, aruco_size = user_requests()
+    save_video_state, aruco_tag, aruco_size, object_name, robot_ip = user_requests()
     # Generate ArUco tag with user-specified parameters
     execute_aruco_tag_generation(ARUCO_TAG_PATH, aruco_tag, aruco_size)
-    execute_ur3e_control()
-    execute_pose_estimation(CAM_NR, aruco_size, CALIB_IMG_PATH, aruco_tag, save_video_state, VIDEO_PATH)
+    execute_ur3e_control(robot_ip)
+    execute_pose_estimation(CAM_NR, aruco_size, object_name, CALIB_IMG_PATH, aruco_tag, save_video_state, VIDEO_PATH)
     print('DONE!')
 
 

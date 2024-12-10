@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from calibrate import ARUCO_DICT
+import re  # For IP address validation
 
 
 def user_requests():
@@ -21,6 +22,8 @@ def user_requests():
     save_result = tk.BooleanVar()
     aruco_type = tk.StringVar()
     video_size = tk.StringVar(value="200")
+    test_object_name = tk.StringVar(value="ArUco")
+    robot_ip = tk.StringVar(value="192.168.1.3")
     save_yes_var = tk.BooleanVar()
     save_no_var = tk.BooleanVar()
 
@@ -32,6 +35,14 @@ def user_requests():
             return size > 0  # Only allow positive integers
         except ValueError:
             return False
+
+    # Input validation for IP address
+    def validate_ip(ip):
+        pattern = re.compile(
+            r"^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.){3}"
+            r"(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$"
+        )
+        return pattern.match(ip) is not None
 
     validate_cmd = new_window.register(validate_size)
 
@@ -50,6 +61,8 @@ def user_requests():
         if not (save_yes_var.get() or save_no_var.get()):
             messagebox.showerror("Error", "Please select Yes or No for saving video")
             return
+
+        # Validate ArUco size
         try:
             size = int(video_size.get())
             if size <= 0:
@@ -57,6 +70,11 @@ def user_requests():
                 return
         except ValueError:
             messagebox.showerror("Error", "Please enter a valid number for size")
+            return
+
+        # Validate IP address
+        if not validate_ip(robot_ip.get()):
+            messagebox.showerror("Error", "Please enter a valid IP address")
             return
 
         save_result.set(save_yes_var.get())  # True if Yes is checked, False if No is checked
@@ -95,6 +113,18 @@ def user_requests():
                            validate="key", validatecommand=(validate_cmd, '%P'))
     size_entry.pack(side=tk.LEFT, padx=5)
 
+    # Test object name input
+    test_object_label = ttk.Label(main_frame, text="Enter Test Object Name:", font=("Arial", 12))
+    test_object_label.pack(pady=10)
+    test_object_entry = ttk.Entry(main_frame, textvariable=test_object_name)
+    test_object_entry.pack()
+
+    # Robot IP address input
+    ip_label = ttk.Label(main_frame, text="Enter Robot IP Address:", font=("Arial", 12))
+    ip_label.pack(pady=10)
+    ip_entry = ttk.Entry(main_frame, textvariable=robot_ip)
+    ip_entry.pack()
+
     # Submit button
     submit_button = ttk.Button(main_frame, text="Submit", command=on_submit)
     submit_button.pack(pady=20)
@@ -103,7 +133,7 @@ def user_requests():
     new_window.mainloop()
 
     # Return the results as a tuple (save_video, aruco_type, video_size)
-    return save_result.get(), aruco_type.get(), int(video_size.get())
+    return save_result.get(), aruco_type.get(), int(video_size.get()), test_object_name.get(), robot_ip.get()
 
 
 if __name__ == "__main__":
