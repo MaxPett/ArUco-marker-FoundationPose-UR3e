@@ -118,7 +118,6 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
     detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
     corners, ids, rejected = detector.detectMarkers(gray)
 
-    # Todo: Check perform subpixel corner detection - might decrease stability or delay detection!
     if len(corners) > 0:
         # Prepare criteria for corner refinement
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.01)
@@ -147,7 +146,7 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
 
             frame = cv2.drawFrameAxes(frame, camera_coefficients, distortion_coefficients,
                                       rvec, tvec, 0.5 * metric_tag_size)
-            # Todo: export rvec --> rotation values --> 0 equals 135° adapt!
+            # Todo: export rvec --> rotation values --> which direction is the top?
             # Determine coordinates of marker's origin
             coordinates = img_point_to_world_point(rvec, tvec, metric_tag_size, world_rot_vector, world_trans_vector)
             origin_x = np.mean(coordinates[:, 0])
@@ -161,10 +160,10 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
 
             text = f"Origin of ArUco marker {i+1}: X = {origin_x:.1f} mm, Y = {origin_y:.1f} mm, Z = {origin_z:.1f} mm"
             (text_width, text_height), text_baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)
-            cv2.putText(frame, text, (10, (i*2)*text_height), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7,
+            cv2.putText(frame, text, (10, (1+(i*2))*text_height), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7,
                         (0, 0, 255), 1, cv2.LINE_AA)
             text_2 = f"RX = {rots[0]:.1f} rad, RY = {rots[1]:.1f} rad, RZ = {rots[2]:.1f} rad"
-            cv2.putText(frame, text, (10, ((i + 1)*2) * text_height), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7,
+            cv2.putText(frame, text_2, (10, (2+(i*2)) * text_height), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7,
                         (0, 0, 255), 1, cv2.LINE_AA)
             # Check scaling and transformation
             marker_length = np.abs(coordinates[0, 0] - coordinates[1, 0])

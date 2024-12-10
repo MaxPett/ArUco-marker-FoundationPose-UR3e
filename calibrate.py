@@ -234,7 +234,7 @@ def main():
 
     obj_points = []
     img_points = []
-    h, w = cv.imread(img_names[0], cv.IMREAD_GRAYSCALE).shape[:2]  # TODO: use imquery call to retrieve results
+    h, w = cv.imread(img_names[0], cv.IMREAD_GRAYSCALE).shape[:2]
 
     # check charucoboard
     aruco_dicts = ARUCO_DICT
