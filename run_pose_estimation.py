@@ -86,9 +86,9 @@ def execute_ur3e_control():
     try:
         # Adjust the command to launch in a new command-line window
         if os.name == 'nt':  # Windows
-            command = f'start cmd /k "python ur3e_control_loop.py"'
+            command = f'start cmd /k "python ur3e_control_loop.py --robot_host 192.168.1.3"'
         else:  # macOS/Linux
-            command = f'xterm -hold -e "python ur3e_control_loop.py"'
+            command = f'xterm -hold -e "python ur3e_control_loop.py --robot_host 192.168.1.3"'
 
         # Execute the command
         process = subprocess.Popen(command, shell=True)

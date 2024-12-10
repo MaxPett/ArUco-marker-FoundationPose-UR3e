@@ -88,16 +88,6 @@ def img_point_to_world_point(r_vec_img, t_vec_img, marker_size, r_vec_world, t_v
 
     # Extract the 3D coordinates
     camera_points = camera_points[:, :3]
-
-    # Construct the world transformation matrix
-    # world_trans_matrix = calc_transformation_matrix(r_vec_world, t_vec_world)
-
-    # Transform the camera points to world coordinates
-    # world_points = np.dot(world_trans_matrix, np.hstack((camera_points, np.ones((camera_points.shape[0], 1)))).T).T
-
-    # Extract the 3D coordinates
-    # world_points = world_points[:, :3]
-    # return world_points
     return camera_points
 
 
@@ -117,7 +107,7 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
 
     # Tag size convertion from pixels to millimeters
     metric_tag_size = tag_size*0.2645833333
-    # metric_tag_size = tag_size # for output in pixel 
+    # metric_tag_size = tag_size # for output in pixel
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     aruco_dict = cv2.aruco.getPredefinedDictionary(aruco_dict_type)

@@ -25,6 +25,7 @@
 import sys
 import logging
 import time
+import argparse
 
 import rtde.rtde as rtde
 import rtde.rtde_config as rtde_config
@@ -33,16 +34,23 @@ import socket
 import threading
 
 sys.path.append("..")
-coordinates_df = pd.read_csv("../ur3e_coordinates.csv", index_col=0)
+# Define command-line arguments
+parser = argparse.ArgumentParser(description="UR3e control script")
+parser.add_argument("--robot_host", type=str, default="192.168.1.3", help="IP address of the robot")
+parser.add_argument("--csv_path", type=str, default="../ur3e_coordinates.csv", help="Relative path to .csv file")
+args = parser.parse_args()
+
+ROBOT_HOST = args.robot_host
+ROBOT_PORT = 30004
+config_filename = "control_loop_configuration.xml"
+CSV_PATH = args.csv_path
+
+coordinates_df = pd.read_csv(CSV_PATH, index_col=0)
 coordinates_df.iloc[:, :3] = coordinates_df.iloc[:, :3].round(3)
 coordinates_df.iloc[:, 3:] = coordinates_df.iloc[:, 3:].round(3)
 setpoints = coordinates_df.values.tolist()
 
 # logging.basicConfig(level=logging.INFO)
-
-ROBOT_HOST = "192.168.1.3"
-ROBOT_PORT = 30004
-config_filename = "control_loop_configuration.xml"
 
 # Socket configuration
 SERVER_HOST = '127.0.0.1'  # Localhost
