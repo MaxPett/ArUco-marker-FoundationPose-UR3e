@@ -100,7 +100,7 @@ def main():
                 data = json.load(file)
 
             # Add a new key-value pair
-            new_key = time.time_ns()
+            new_key = int(round(time.time()*1000))
             data[new_key] = save_frame_pos
 
             # Save the updated JSON back to the file
