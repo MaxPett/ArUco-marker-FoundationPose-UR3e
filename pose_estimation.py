@@ -167,7 +167,7 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
                         (0, 0, 255), 1, cv2.LINE_AA)
             # Check scaling and transformation
             marker_length = np.abs(coordinates[0, 0] - coordinates[1, 0])
-            text_marker_size = f"Length of ArUco marker {i+1}: {marker_length:.1f} pixel?"
+            text_marker_size = f"Length of ArUco marker {i+1}: {marker_length:.1f} mm"
             (text_marker_width, text_marker_height), text_baseline = cv2.getTextSize(text_marker_size, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)
             cv2.putText(frame, text_marker_size,
                         ((frame.shape[1] - (text_marker_width - 10)), (frame.shape[0] - ((i + 1) * text_marker_height + 10))),

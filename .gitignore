@@ -1,3 +1,6 @@
 impl*
 training_data*
 build_dataset*
+backup*
+output/*
+pose_estimation/*

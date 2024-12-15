@@ -4,8 +4,8 @@ from ui import user_requests
 
 
 CAM_NR = 2   # check device manager (0 for internal webcam)
-CALIB_ROWS = 11
-CALIB_COLUMNS = 8
+CALIB_ROWS = 9
+CALIB_COLUMNS = 7
 CALIB_TYPE = 'checkerboard'  # circles, acircles, checkerboard, radon_checkerboard, charuco_board.
 CALIB_PATTERN_SIZE = 20.0
 CALIB_PAGE_SIZE = 'A4'
@@ -100,8 +100,6 @@ def execute_ur3e_control(ip_address):
 
 
 if __name__ == "__main__":
-    CALIB_COLUMNS = 7
-    CALIB_ROWS = 9
     execute_pattern_generation(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CALIB_TYPE, CALIB_PATTERN_SIZE, CALIB_PAGE_SIZE)
     # check if calib images of correct pattern
     execute_calibration(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CAM_NR, CALIB_IMG_PATH, CALIB_PATTERN_SIZE)
