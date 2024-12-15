@@ -26,7 +26,7 @@ def user_requests():
     robot_ip = tk.StringVar(value="192.168.1.3")
     save_yes_var = tk.BooleanVar()
     save_no_var = tk.BooleanVar()
-    pose_type = tk.StringVar(value="ArUco Pose")
+    pose_type = tk.StringVar(value="Foundation Pose")
 
     # Input validation for ArUco marker size
     def validate_size(value):
@@ -63,18 +63,19 @@ def user_requests():
             messagebox.showerror("Error", "Please select Yes or No for saving video")
             return
 
-        # Validate ArUco size
-        try:
-            size = int(video_size.get())
-            if size <= 0:
-                messagebox.showerror("Error", "Please enter a positive number for size")
+        if pose_type.get() == "ArUco Pose":
+            # Validate ArUco size
+            try:
+                size = int(video_size.get())
+                if size <= 0:
+                    messagebox.showerror("Error", "Please enter a positive number for size")
+                    return
+            except ValueError:
+                messagebox.showerror("Error", "Please enter a valid number for size")
                 return
-        except ValueError:
-            messagebox.showerror("Error", "Please enter a valid number for size")
-            return
 
-        # Validate IP address
-        if not validate_ip(robot_ip.get()):
+        # Validate IP address if saving video
+        if save_yes_var.get() and not validate_ip(robot_ip.get()):
             messagebox.showerror("Error", "Please enter a valid IP address")
             return
 
@@ -84,6 +85,12 @@ def user_requests():
     # GUI Layout setup
     main_frame = ttk.Frame(new_window, padding="20")
     main_frame.pack(fill=tk.BOTH, expand=True)
+
+    # Test object name input
+    test_object_label = ttk.Label(main_frame, text="Enter Test Object Name:", font=("Arial", 12))
+    test_object_label.pack(pady=10)
+    test_object_entry = ttk.Entry(main_frame, textvariable=test_object_name)
+    test_object_entry.pack()
 
     # Save video question
     save_label = ttk.Label(main_frame, text="Do you want to save the following video?", font=("Arial", 12))
@@ -96,31 +103,7 @@ def user_requests():
     save_no_check = ttk.Checkbutton(save_frame, text="No", variable=save_no_var, command=on_save_no)
     save_no_check.pack(side=tk.LEFT, padx=10)
 
-    # ArUco dictionary dropdown
-    aruco_label = ttk.Label(main_frame, text="Select ArUco Dictionary:", font=("Arial", 12))
-    aruco_label.pack(pady=10)
-    aruco_dropdown = ttk.Combobox(main_frame, textvariable=aruco_type, values=list(ARUCO_DICT.keys()), state="readonly")
-    aruco_dropdown.pack()
-    aruco_dropdown.set(list(ARUCO_DICT.keys())[12])  # Set default value
-
-    # ArUco size input
-    size_frame = ttk.Frame(main_frame)
-    size_frame.pack(pady=10)
-
-    size_label = ttk.Label(size_frame, text="Enter ArUco size (pixels):", font=("Arial", 12))
-    size_label.pack(side=tk.LEFT, padx=5)
-
-    size_entry = ttk.Entry(size_frame, textvariable=video_size, width=10,
-                           validate="key", validatecommand=(validate_cmd, '%P'))
-    size_entry.pack(side=tk.LEFT, padx=5)
-
-    # Test object name input
-    test_object_label = ttk.Label(main_frame, text="Enter Test Object Name:", font=("Arial", 12))
-    test_object_label.pack(pady=10)
-    test_object_entry = ttk.Entry(main_frame, textvariable=test_object_name)
-    test_object_entry.pack()
-
-    # Robot IP address input
+    # Robot IP address input (only shown if video is saved)
     ip_label = ttk.Label(main_frame, text="Enter Robot IP Address:", font=("Arial", 12))
     ip_label.pack(pady=10)
     ip_entry = ttk.Entry(main_frame, textvariable=robot_ip)
@@ -131,7 +114,35 @@ def user_requests():
     pose_label.pack(pady=10)
     pose_dropdown = ttk.Combobox(main_frame, textvariable=pose_type, values=["ArUco Pose", "Foundation Pose"], state="readonly")
     pose_dropdown.pack()
-    pose_dropdown.set("ArUco Pose")  # Set default value
+    pose_dropdown.set("Foundation Pose")  # Set default value
+
+    # ArUco dictionary dropdown and size input (only shown if ArUco Pose is selected)
+    def update_aruco_options(*args):
+        if pose_type.get() == "ArUco Pose":
+            aruco_label.pack(pady=10)
+            aruco_dropdown.pack()
+            size_frame.pack(pady=10)
+            submit_button.pack_forget()  # Temporarily remove submit button
+            submit_button.pack(pady=20)  # Re-add submit button at the end
+        else:
+            aruco_label.pack_forget()
+            aruco_dropdown.pack_forget()
+            size_frame.pack_forget()
+            submit_button.pack_forget()  # Temporarily remove submit button
+            submit_button.pack(pady=20)  # Re-add submit button at the end
+
+    pose_type.trace_add("write", update_aruco_options)
+
+    aruco_label = ttk.Label(main_frame, text="Select ArUco Dictionary:", font=("Arial", 12))
+    aruco_dropdown = ttk.Combobox(main_frame, textvariable=aruco_type, values=list(ARUCO_DICT.keys()), state="readonly")
+    aruco_dropdown.set(list(ARUCO_DICT.keys())[12])  # Set default value
+
+    size_frame = ttk.Frame(main_frame)
+    size_label = ttk.Label(size_frame, text="Enter ArUco size (pixels):", font=("Arial", 12))
+    size_label.pack(side=tk.LEFT, padx=5)
+    size_entry = ttk.Entry(size_frame, textvariable=video_size, width=10,
+                           validate="key", validatecommand=(validate_cmd, '%P'))
+    size_entry.pack(side=tk.LEFT, padx=5)
 
     # Submit button
     submit_button = ttk.Button(main_frame, text="Submit", command=on_submit)
@@ -141,7 +152,7 @@ def user_requests():
     new_window.mainloop()
 
     # Return the results as a tuple (save_video, aruco_type, video_size, pose_type)
-    return save_result.get(), aruco_type.get(), int(video_size.get()), test_object_name.get(), robot_ip.get(), pose_type.get()
+    return save_result.get(), aruco_type.get(), int(video_size.get()) if pose_type.get() == "ArUco Pose" else None, test_object_name.get(), robot_ip.get(), pose_type.get()
 
 
 if __name__ == "__main__":

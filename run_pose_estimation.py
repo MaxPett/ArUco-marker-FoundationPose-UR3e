@@ -99,15 +99,28 @@ def execute_ur3e_control(ip_address):
         os.chdir(work_dir)
 
 
+def execute_foundation_pose(obj_name):
+    # Construct the command with mandatory elements
+    command = ["python", "foundation_pose.py",
+               "-n", str(obj_name),
+               ]
+    result = subprocess.run(command, capture_output=True, text=True)
+    check_execution(result)
+
+
 if __name__ == "__main__":
     execute_pattern_generation(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CALIB_TYPE, CALIB_PATTERN_SIZE, CALIB_PAGE_SIZE)
     # check if calib images of correct pattern
     execute_calibration(CALIB_COLUMNS, CALIB_ROWS, CALIB_TYPE, CAM_NR, CALIB_IMG_PATH, CALIB_PATTERN_SIZE)
-    save_video_state, aruco_tag, aruco_size, object_name, robot_ip = user_requests()
+    save_video_state, aruco_tag, aruco_size, object_name, robot_ip, pose_type = user_requests()
     # Generate ArUco tag with user-specified parameters
-    execute_aruco_tag_generation(ARUCO_TAG_PATH, aruco_tag, aruco_size)
+    if pose_type == "ArUco Pose":
+        execute_aruco_tag_generation(ARUCO_TAG_PATH, aruco_tag, aruco_size)
     execute_ur3e_control(robot_ip)
-    execute_pose_estimation(CAM_NR, aruco_size, object_name, CALIB_IMG_PATH, aruco_tag, save_video_state, VIDEO_PATH)
+    if pose_type == "ArUco Pose":
+        execute_pose_estimation(CAM_NR, aruco_size, object_name, CALIB_IMG_PATH, aruco_tag, save_video_state, VIDEO_PATH)
+    else:
+        execute_foundation_pose(object_name)
     print('DONE!')
 
 

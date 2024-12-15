@@ -60,7 +60,7 @@ def startup_check(path, object_name):
     if os.path.isfile(path) and os.access(path, os.R_OK):
         pass
     else:
-        with os.open(os.path.join(path, f'{object_name}.json'), 'w') as db_file:
+        with open(str(path + f'/{object_name}.json'), 'w') as db_file:
             db_file.write(json.dumps({}))
 
 
