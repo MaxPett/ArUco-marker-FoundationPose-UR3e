@@ -10,13 +10,13 @@ def user_requests():
 
         Returns:
             tuple: (save_video, run_pose_estimation, aruco_type, video_size)
-        """
+    """
     # Create a new window
     new_window = tk.Tk()
     new_window.title("Video Settings")
 
     # Set the size of the window
-    new_window.geometry("500x500+650+250")
+    new_window.geometry("500x550+650+250")
 
     # GUI control variables
     save_result = tk.BooleanVar()
@@ -26,6 +26,7 @@ def user_requests():
     robot_ip = tk.StringVar(value="192.168.1.3")
     save_yes_var = tk.BooleanVar()
     save_no_var = tk.BooleanVar()
+    pose_type = tk.StringVar(value="ArUco Pose")
 
     # Input validation for ArUco marker size
     def validate_size(value):
@@ -125,6 +126,13 @@ def user_requests():
     ip_entry = ttk.Entry(main_frame, textvariable=robot_ip)
     ip_entry.pack()
 
+    # Pose type dropdown
+    pose_label = ttk.Label(main_frame, text="Select Pose Type:", font=("Arial", 12))
+    pose_label.pack(pady=10)
+    pose_dropdown = ttk.Combobox(main_frame, textvariable=pose_type, values=["ArUco Pose", "Foundation Pose"], state="readonly")
+    pose_dropdown.pack()
+    pose_dropdown.set("ArUco Pose")  # Set default value
+
     # Submit button
     submit_button = ttk.Button(main_frame, text="Submit", command=on_submit)
     submit_button.pack(pady=20)
@@ -132,8 +140,8 @@ def user_requests():
     # Wait for the window to close
     new_window.mainloop()
 
-    # Return the results as a tuple (save_video, aruco_type, video_size)
-    return save_result.get(), aruco_type.get(), int(video_size.get()), test_object_name.get(), robot_ip.get()
+    # Return the results as a tuple (save_video, aruco_type, video_size, pose_type)
+    return save_result.get(), aruco_type.get(), int(video_size.get()), test_object_name.get(), robot_ip.get(), pose_type.get()
 
 
 if __name__ == "__main__":
