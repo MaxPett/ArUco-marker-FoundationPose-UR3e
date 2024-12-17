@@ -17,6 +17,11 @@ import threading
 HOST = '127.0.0.1'  # Localhost
 PORT = 65432        # Port for the server
 
+# Start Point: X, Y, Z+distance camera roboter TCP, RX, -RY, -RZ
+VECTOR_TO_ROBOT = [0, -350, 905, 0.01, 2.216, -2.242]
+
+INTERNAL_CAM_VECTOR = [-32.5, 8, 0, -3.142, 0, 0]
+
 # Shared list to store messages
 received_messages = []
 
@@ -146,14 +151,14 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
 
             frame = cv2.drawFrameAxes(frame, camera_coefficients, distortion_coefficients,
                                       rvec, tvec, 0.5 * metric_tag_size)
-            # Todo: export rvec --> rotation values --> which direction is the top?
-            # Determine coordinates of marker's origin
+            # Determine coordinates of marker's origin and account for internal corrections and rotations
             coordinates = img_point_to_world_point(rvec, tvec, metric_tag_size, world_rot_vector, world_trans_vector)
-            origin_x = np.mean(coordinates[:, 0])
-            origin_y = np.mean(coordinates[:, 1])
-            origin_z = np.mean(coordinates[:, 2])
+            origin_x = np.mean(coordinates[:, 0]) + INTERNAL_CAM_VECTOR[0]
+            origin_y = np.mean(coordinates[:, 1]) + INTERNAL_CAM_VECTOR[1]
+            origin_z = np.mean(coordinates[:, 2]) + INTERNAL_CAM_VECTOR[2]
             origins = list([origin_x, origin_y, origin_z])
             rots = np.squeeze(rvec)
+            rots[0] = rots[0] + INTERNAL_CAM_VECTOR[3]
             origins.extend(rots)
             coords_rots = [float(round(elem, 2)) for elem in origins]
             list_coordinates.append(coords_rots)
@@ -270,7 +275,9 @@ def main():
             save_frame_pos = eval(save_frame_pos[-1].split('_')[-1])
             save_frame_pos = np.array(save_frame_pos)
             save_frame_pos[:3] = 1000 * save_frame_pos[:3]
+            save_frame_pos = np.array(VECTOR_TO_ROBOT) - save_frame_pos
             save_frame_pos = [float(round(coord, 2)) for coord in save_frame_pos]
+
             save_frame_state = True
             received_messages.clear()  # Clear after processing
 
