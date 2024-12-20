@@ -18,9 +18,10 @@ HOST = '127.0.0.1'  # Localhost
 PORT = 65432        # Port for the server
 
 # Start Point: X, Y, Z+distance camera roboter TCP, RX, -RY, -RZ
-VECTOR_TO_ROBOT = [0, -350, 905, 0.01, 2.216, -2.242]
-
-INTERNAL_CAM_VECTOR = [-32.5, 8, 0, -3.142, 0, 0]
+VECTOR_TO_ROBOT = [0, -350, 1016.5, 0.01, 2.216, -2.242]
+# Obj central point shift + start point correction!!
+VECTOR_TCP_OBJ_CENTER = [-2.5, -0.3, 0, 0, 0, 0]
+INTERNAL_CAM_VECTOR = [-32.5, 8, 4.2, -3.142, 0, 0]
 
 # Shared list to store messages
 received_messages = []
@@ -151,11 +152,12 @@ def pose_estimation(frame, aruco_dict_type, camera_coefficients, distortion_coef
 
             frame = cv2.drawFrameAxes(frame, camera_coefficients, distortion_coefficients,
                                       rvec, tvec, 0.5 * metric_tag_size)
+            # Todo: Check Z Shift, corrected for start point!!!!
             # Determine coordinates of marker's origin and account for internal corrections and rotations
             coordinates = img_point_to_world_point(rvec, tvec, metric_tag_size, world_rot_vector, world_trans_vector)
-            origin_x = np.mean(coordinates[:, 0]) + INTERNAL_CAM_VECTOR[0]
-            origin_y = np.mean(coordinates[:, 1]) + INTERNAL_CAM_VECTOR[1]
-            origin_z = np.mean(coordinates[:, 2]) + INTERNAL_CAM_VECTOR[2]
+            origin_x = np.mean(coordinates[:, 0]) + INTERNAL_CAM_VECTOR[0] + VECTOR_TCP_OBJ_CENTER[0]
+            origin_y = np.mean(coordinates[:, 1]) + INTERNAL_CAM_VECTOR[1] + VECTOR_TCP_OBJ_CENTER[1]
+            origin_z = np.mean(coordinates[:, 2]) + INTERNAL_CAM_VECTOR[2] + VECTOR_TCP_OBJ_CENTER[2]
             origins = list([origin_x, origin_y, origin_z])
             rots = np.squeeze(rvec)
             rots[0] = rots[0] + INTERNAL_CAM_VECTOR[3]
