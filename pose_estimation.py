@@ -17,6 +17,7 @@ import threading
 HOST = '127.0.0.1'  # Localhost
 PORT = 65432        # Port for the server
 
+# Todo: wrong transformation, offset of z and y axis wrong!
 # Start Point: X, Y, Z+distance camera roboter TCP, RX, -RY, -RZ
 VECTOR_TO_ROBOT = [0, -350, 1016.5, 0.01, 2.216, -2.242]
 # Obj central point shift + start point correction!!

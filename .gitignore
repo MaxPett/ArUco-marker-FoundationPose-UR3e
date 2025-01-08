@@ -4,3 +4,4 @@ build_dataset*
 backup*
 output/*
 pose_estimation/*
+CPS_PC/*
