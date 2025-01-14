@@ -118,6 +118,11 @@ def create_plots(df, save_path):
         ax3.tick_params(axis='y', labelsize=14)
         plt.subplots_adjust(hspace=0.25)   # increase white space height between subplots
 
+        ax1.set_xlim(0, 350)
+        ax1.set_ylim(-120, 670)
+        ax3.set_xlim(0, 350)
+        ax3.set_ylim(-45, 45)
+
         plot_title = plot_titles[i]
         fig.savefig(f'{save_path}/{plot_title}.png', format='png', bbox_inches='tight')
         fig.savefig(f'{save_path}/{plot_title}.eps', format='eps', bbox_inches='tight')
