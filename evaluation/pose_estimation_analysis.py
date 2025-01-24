@@ -78,13 +78,16 @@ def load_results(dir_res):
         'eval_X', 'eval_Y', 'eval_Z', 'eval_RX', 'eval_RY', 'eval_RZ', 'time_ns']
     df = df[desired_order]
     df.sort_values(by='time_ns', inplace=True)
+
+    # Save it to a file
+    df.to_csv('aruco_pose_data.csv', index=False)
     return df
 
 
-def create_plots(df, save_path):
+def create_plots(df):
     colors = sns.color_palette(palette='bright', n_colors=len(df))
     label_lists = [[df.keys()[1:4], df.keys()[4:7]], [df.keys()[7:10], df.keys()[10:13]]]
-    plot_titles = ["ground truth position", "measured ArUco position"]
+    plot_titles = ["aruco_ground_truth_position_plot", "ArUco_position_plot"]
     for i in range(2):
         fig, axs = plt.subplots(nrows=2, ncols=5, figsize=(15, 8))
         for ax in axs.ravel():
@@ -123,17 +126,18 @@ def create_plots(df, save_path):
         ax3.set_xlim(0, 350)
         ax3.set_ylim(-45, 45)
 
+        if not os.path.exists("plots"):
+            os.mkdir("plots")
         plot_title = plot_titles[i]
-        fig.savefig(f'{save_path}/{plot_title}.png', format='png', bbox_inches='tight')
-        fig.savefig(f'{save_path}/{plot_title}.eps', format='eps', bbox_inches='tight')
-
+        fig.savefig(f'plots/{plot_title}.png', format='png', bbox_inches='tight')
+        fig.savefig(f'plots/{plot_title}.eps', format='eps', bbox_inches='tight')
         fig.suptitle(plot_title, fontsize=20)
 
 
 if __name__ == '__main__':
-    dir_pose_estimation = "pose_estimation/ArUco_final"
+    dir_pose_estimation = "../pose_estimation/ArUco_final"
     dir_pose_estimation = os.path.join(os.getcwd(), dir_pose_estimation)
     df_res = load_results(dir_pose_estimation)
-    create_plots(df_res, 'pose_estimation')
+    create_plots(df_res)
     plt.show()
     print('done!!!')

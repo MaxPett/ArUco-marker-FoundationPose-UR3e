@@ -216,8 +216,9 @@ def main():
     square_size = args.square_size
     marker_size = args.marker_size
     aruco_dict_name = args.aruco_dict
-    debug_dir = args.debug
     calibration_path = args.path
+    debug_dir = args.debug
+    debug_dir = os.path.join(calibration_path, debug_dir)
     threads = args.threads
 
     img_names = glob(os.path.join(calibration_path, '*.jpg'))
