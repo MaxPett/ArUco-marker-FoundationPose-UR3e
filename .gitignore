@@ -1,4 +1,4 @@
-pycache/*
+__pycache__
 RTX3090_PC/BundleSDF/01_RealSense_box/depth/*
 RTX3090_PC/BundleSDF/01_RealSense_box/masks/*
 RTX3090_PC/BundleSDF/01_RealSense_box/output/*
