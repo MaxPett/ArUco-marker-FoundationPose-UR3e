@@ -75,7 +75,7 @@ The setup includes:
 
 ```bash
 # Clone the repo
-git clone https://github.com/MaxPett/BSc-MMB
+git clone https://github.com/MaxPett/ArUco-marker-FoundationPose-UR3e
 cd BSc-MMB
 
 # Create and activate a virtual environment
