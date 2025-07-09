@@ -76,13 +76,14 @@ The setup includes:
 ```bash
 # Clone the repo
 git clone https://github.com/MaxPett/BSc-MMB
+cd BSc-MMB
 
 # Create and activate a virtual environment
 conda create -n pose_env python=3.10
 conda activate pose_env
 
-# Install required packages
-pip install opencv-python opencv-contrib-python numpy
+# Install required packages from requirements.txt
+pip install -r requirements.txt
 ```
 
 Install RTDE Library to the UR3e folder and follow the installation guide from:
