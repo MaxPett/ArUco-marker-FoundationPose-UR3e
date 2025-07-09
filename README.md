@@ -83,8 +83,10 @@ conda activate pose_env
 
 # Install required packages
 pip install opencv-python opencv-contrib-python numpy
-pip install rtde-client rtde-receive
 ```
+
+Install RTDE Library to the UR3e folder and follow the installation guide from:
+- [RTDE Python Client Library](https://github.com/UniversalRobots/RTDE_Python_Client_Library)
 
 ### Docker (for FoundationPose)
 
