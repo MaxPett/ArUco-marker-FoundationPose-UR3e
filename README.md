@@ -21,6 +21,7 @@ The setup includes:
 - **Computer**: Controls all processing.
 - **LAN Router**: Enables communication between components.
 
+<a name="image-exp-setup"></a>
 > ![Physical experimental setup](doc_images/Experimental_setup.PNG)
 
 ---
@@ -65,7 +66,7 @@ The setup includes:
 
 ### Hardware Setup
 
-1. Assemble hardware as per *Figure 1*.
+1. Assemble hardware as shown [above](#image-exp-setup).
 2. Connect the computer and UR3e to the same LAN.
 3. Assign static IPs (as per the thesis or router config).
 4. Ensure the PC can ping the robot.
@@ -74,7 +75,7 @@ The setup includes:
 
 ```bash
 # Clone the repo
-git clone <this-repository-url>
+git clone https://github.com/MaxPett/BSc-MMB
 
 # Create and activate a virtual environment
 conda create -n pose_env python=3.10
@@ -101,9 +102,9 @@ Copy the following files from the `UR3e/` folder to a USB drive, and load them o
 ## 🧠 FoundationPose Model Setup
 
 Follow the installation guides from:
-- [FoundationPose repository](https://github.com/autonomousvision/foundationpose)
-- [BundleSDF repository](https://github.com/autonomousvision/bundlesdf)
-- [Segment Anything Model (SAM)](https://github.com/facebookresearch/segment-anything)
+- [FoundationPose repository](https://github.com/NVlabs/FoundationPose)
+- [BundleSDF repository](https://github.com/NVlabs/BundleSDF)
+- [Segment Anything Model (SAM)](https://github.com/facebookresearch/sam2)
 
 ---
 
