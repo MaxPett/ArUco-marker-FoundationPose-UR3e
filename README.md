@@ -1,6 +1,6 @@
-# Camera Calibration and ArUco Marker Pose Estimation
+# Camera Calibration, ArUco Marker & FoundationPose Pose Estimation
 
-This project enables camera calibration, video capture, ArUco marker generation, and real-time pose estimation using ArUco markers. It utilizes OpenCV for computer vision tasks and Tkinter for user interface components.
+This project enables camera calibration, video capture, ArUco marker generation, real-time pose estimation using ArUco markers and FoudationPose Pose Estimation. It utilizes OpenCV for computer vision tasks, Nvidia's FoundationPose model for a DeepLearning based approach, establishes UR3e obotic arm communication, runs a cuboidal test point procedure and Tkinter for user interface components.
 
 ## Features
 
@@ -8,6 +8,7 @@ This project enables camera calibration, video capture, ArUco marker generation,
 2. **Video Capture and Recording**: Stream and optionally save video from a webcam.
 3. **ArUco Marker Generation**: Create ArUco markers for pose estimation.
 4. **Real-Time Pose Estimation**: Estimate poses using detected ArUco markers.
+6. **FoudationPose Implementation**: Utilizes FoundationPose for pose estimation.
 
 ## Requirements
 
