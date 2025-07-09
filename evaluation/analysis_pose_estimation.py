@@ -87,7 +87,7 @@ def load_results(dir_res):
 def create_plots(df):
     colors = sns.color_palette(palette='bright', n_colors=len(df))
     label_lists = [[df.keys()[1:4], df.keys()[4:7]], [df.keys()[7:10], df.keys()[10:13]]]
-    plot_titles = ["aruco_ground_truth_position_plot", "ArUco_position_plot"]
+    plot_titles = ["aruco_ground_truth_position_plot", "ArUco_absolut_position_plot"]
     for i in range(2):
         fig, axs = plt.subplots(nrows=2, ncols=5, figsize=(15, 8))
         for ax in axs.ravel():

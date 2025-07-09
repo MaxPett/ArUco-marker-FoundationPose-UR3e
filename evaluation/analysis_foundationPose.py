@@ -30,11 +30,11 @@ def load_ur3e_pos(eval_dir):
     df['RY'] = df['RY'] * (180 / np.pi)
     df['RZ'] = df['RZ'] * (180 / np.pi)
 
-    # Account for value bounce between 0 and 360 with threshold of 50°
-    df['RX'] = df['RX'].apply(lambda x: x + 90 if x < -50 else x)
-    df['RX'] = df['RX'].apply(lambda x: x - 90 if x > 50 else x)
-    df['RZ'] = df['RZ'].apply(lambda x: x + 90 if x < -50 else x)
-    df['RZ'] = df['RZ'].apply(lambda x: x - 90 if x > 50 else x)
+    # Account for value bounce between 0 and 360 and 45° shift with threshold of 50°
+    df['RX'] = df['RX'].apply(lambda x: x + 135 if x < -50 else x)
+    df['RX'] = df['RX'].apply(lambda x: x - 135 if x > 50 else x)
+    df['RZ'] = df['RZ'].apply(lambda x: x + 135 if x < -50 else x)
+    df['RZ'] = df['RZ'].apply(lambda x: x - 135 if x > 50 else x)
     return df
 
 
@@ -88,11 +88,11 @@ def load_foundation_pose_pos(eval_dir, list_ur3e_timestamps):
     df_fp['RY'] = df_fp['RY'] * (180 / np.pi)
     df_fp['RZ'] = df_fp['RZ'] * (180 / np.pi)
 
-    # Account for value bounce with threshold of 50°
-    df_fp['RX'] = df_fp['RX'].apply(lambda x: x + 90 if x < -50 else x)
-    df_fp['RX'] = df_fp['RX'].apply(lambda x: x - 90 if x > 50 else x)
-    df_fp['RZ'] = df_fp['RZ'].apply(lambda x: x + 90 if x < -50 else x)
-    df_fp['RZ'] = df_fp['RZ'].apply(lambda x: x - 90 if x > 50 else x)
+    # Account for value bounce between 0 and 360 and 45° shift with threshold of 50°
+    df_fp['RX'] = df_fp['RX'].apply(lambda x: x + 135 if x < -50 else x)
+    df_fp['RX'] = df_fp['RX'].apply(lambda x: x - 135 if x > 50 else x)
+    df_fp['RZ'] = df_fp['RZ'].apply(lambda x: x + 135 if x < -50 else x)
+    df_fp['RZ'] = df_fp['RZ'].apply(lambda x: x - 135 if x > 50 else x)
     return df_fp
 
 
@@ -170,6 +170,6 @@ if __name__ == '__main__':
     df_fp_pos = load_foundation_pose_pos(evaluation_dir, df_ur3e_pos.index)
     df_diff = calc_accuracy(df_ur3e_pos, df_fp_pos)
     create_plots(df_ur3e_pos, 'Fpose_ground_truth_position_plot')
-    create_plots(df_fp_pos, 'FPose_position_plot')
+    create_plots(df_fp_pos, 'FPose_absolut_position_plot')
     plt.show()
     print('done!!')

@@ -64,6 +64,13 @@ def execute_aruco_tag_generation(output_path, tag_type, tag_size):
     check_execution(result)
 
 
+def execute_calc_positions():
+    # Program to calculate ur3e reference positions
+    command = ["python", "calc_positions.py"]
+    result = subprocess.run(command, capture_output=True, text=True)
+    check_execution(result)
+
+
 def execute_pose_estimation(cam_id, tag_size, obj_name, cam_parameters_path, tag_type, recording, folder_rec):
     cam_parameters_path += ".npz"
     # Construct the command with mandatory elements
@@ -116,6 +123,7 @@ if __name__ == "__main__":
     # Generate ArUco tag with user-specified parameters
     if pose_type == "ArUco Pose":
         execute_aruco_tag_generation(ARUCO_TAG_PATH, aruco_tag, aruco_size)
+    execute_calc_positions()
     execute_ur3e_control(robot_ip)
     if pose_type == "ArUco Pose":
         execute_pose_estimation(CAM_NR, aruco_size, object_name, CALIB_IMG_PATH, aruco_tag, save_video_state, VIDEO_PATH)
