@@ -196,6 +196,12 @@ Main orchestrator that:
 
 ---
 
+## 📊 Results
+
+The results and conclusions of the study, along with the limitations outlined below, can be reviewed at: [6D Object Pose Estimation Using Classical and Deep Learning Approaches @ CPS @ Montanuiversität Leoben](https://cloud.cps.unileoben.ac.at/index.php/s/xF457JYe6TxBdcS)
+
+---
+
 ## ⚠️ Known Issues
 
 - There is likely an issue with the **calculated rotated positions** at the reference points. These may not accurately reflect the intended orientations and could affect evaluation metrics for both methods.
